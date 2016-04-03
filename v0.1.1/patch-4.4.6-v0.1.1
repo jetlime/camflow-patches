@@ -112,7 +112,7 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/cred.h ./linux-4.4.6/include/lin
  #define current_security()	(current_cred_xxx(security))
 +#define current_provenance()	(current_cred_xxx(provenance))
 +#define current_ifc()	(current_cred_xxx(ifc))
-
+ 
  extern struct user_namespace init_user_ns;
  #ifdef CONFIG_USER_NS
 diff -uprN ./pristine/linux-4.4.6/include/linux/fs.h ./linux-4.4.6/include/linux/fs.h
@@ -121,8 +121,8 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/fs.h ./linux-4.4.6/include/linux
 @@ -272,7 +272,7 @@ struct iattr {
   */
  #define FILESYSTEM_MAX_STACK_DEPTH 2
-
--/**
+ 
+-/** 
 +/**
   * enum positive_aop_returns - aop return codes with specific semantics
   *
@@ -131,29 +131,29 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/fs.h ./linux-4.4.6/include/linux
   * 			    be a candidate for writeback again in the near
   * 			    future.  Other callers must be careful to unlock
   * 			    the page if they get this return.  Returned by
-- * 			    writepage();
+- * 			    writepage(); 
 + * 			    writepage();
   *
   * @AOP_TRUNCATED_PAGE: The AOP method that was handed a locked page has
   *  			unlocked it and the page might have been truncated.
 @@ -599,6 +599,7 @@ struct inode {
-
+ 
  #ifdef CONFIG_SECURITY
  	void			*i_security;
 +	void 			*i_camflow;
  #endif
-
+ 
  	/* Stat data, not accessed from path walking */
 @@ -892,10 +893,10 @@ static inline struct file *get_file(stru
-
+ 
  #define	MAX_NON_LFS	((1UL<<31) - 1)
-
--/* Page cache limit. The filesystems should put that into their s_maxbytes
--   limits, otherwise bad things can happen in VM. */
+ 
+-/* Page cache limit. The filesystems should put that into their s_maxbytes 
+-   limits, otherwise bad things can happen in VM. */ 
 +/* Page cache limit. The filesystems should put that into their s_maxbytes
 +   limits, otherwise bad things can happen in VM. */
  #if BITS_PER_LONG==32
--#define MAX_LFS_FILESIZE	(((loff_t)PAGE_CACHE_SIZE << (BITS_PER_LONG-1))-1)
+-#define MAX_LFS_FILESIZE	(((loff_t)PAGE_CACHE_SIZE << (BITS_PER_LONG-1))-1) 
 +#define MAX_LFS_FILESIZE	(((loff_t)PAGE_CACHE_SIZE << (BITS_PER_LONG-1))-1)
  #elif BITS_PER_LONG==64
  #define MAX_LFS_FILESIZE 	((loff_t)0x7fffffffffffffffLL)
@@ -166,13 +166,13 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/fs.h ./linux-4.4.6/include/linux
 +	void										*s_provenance;
 +#endif
  	const struct xattr_handler **s_xattr;
-
+ 
  	struct hlist_bl_head	s_anon;		/* anonymous dentries for (nfs) exporting */
 @@ -1922,7 +1926,7 @@ int sync_inode_metadata(struct inode *in
  struct file_system_type {
  	const char *name;
  	int fs_flags;
--#define FS_REQUIRES_DEV		1
+-#define FS_REQUIRES_DEV		1 
 +#define FS_REQUIRES_DEV		1
  #define FS_BINARY_MOUNTDATA	2
  #define FS_HAS_SUBTYPE		4
@@ -181,7 +181,7 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/fs.h ./linux-4.4.6/include/linux
  extern ssize_t kernel_write(struct file *, const char *, size_t, loff_t);
  extern ssize_t __kernel_write(struct file *, const char *, size_t, loff_t *);
  extern struct file * open_exec(const char *);
--
+- 
 +
  /* fs/dcache.c -- generic fs support functions */
  extern int is_subdir(struct dentry *, struct dentry *);
@@ -587,7 +587,7 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/ipc.h ./linux-4.4.6/include/linu
  	kgid_t		gid;
  	kuid_t		cuid;
  	kgid_t		cgid;
--	umode_t		mode;
+-	umode_t		mode; 
 +	umode_t		mode;
  	unsigned long	seq;
  	void		*security;
@@ -598,7 +598,7 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/ipc.h ./linux-4.4.6/include/linu
 +	void		*ifc;
 +#endif
  };
-
+ 
  #endif /* _LINUX_IPC_H */
 diff -uprN ./pristine/linux-4.4.6/include/linux/lsm_hooks.h ./linux-4.4.6/include/linux/lsm_hooks.h
 --- ./pristine/linux-4.4.6/include/linux/lsm_hooks.h	2016-03-16 16:43:17.000000000 +0100
@@ -606,7 +606,7 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/lsm_hooks.h ./linux-4.4.6/includ
 @@ -1887,4 +1887,16 @@ extern void __init yama_add_hooks(void);
  static inline void __init yama_add_hooks(void) { }
  #endif
-
+ 
 +#ifdef CONFIG_SECURITY_PROVENANCE
 +extern void __init provenance_add_hooks(void);
 +#else
@@ -635,7 +635,7 @@ diff -uprN ./pristine/linux-4.4.6/include/linux/msg.h ./linux-4.4.6/include/linu
 +#endif
  	/* the actual message follows immediately */
  };
-
+ 
 diff -uprN ./pristine/linux-4.4.6/include/linux/provenance.h ./linux-4.4.6/include/linux/provenance.h
 --- ./pristine/linux-4.4.6/include/linux/provenance.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.4.6/include/linux/provenance.h	2016-04-02 16:31:36.718481692 +0200
@@ -1042,7 +1042,7 @@ diff -uprN ./pristine/linux-4.4.6/include/uapi/linux/netlink.h ./linux-4.4.6/inc
  #define NETLINK_SELINUX		7	/* SELinux event notifications */
  #define NETLINK_ISCSI		8	/* Open-iSCSI */
  #define NETLINK_AUDIT		9	/* auditing */
--#define NETLINK_FIB_LOOKUP	10
+-#define NETLINK_FIB_LOOKUP	10	
 +#define NETLINK_FIB_LOOKUP	10
  #define NETLINK_CONNECTOR	11
  #define NETLINK_NETFILTER	12	/* netfilter subsystem */
@@ -1052,12 +1052,12 @@ diff -uprN ./pristine/linux-4.4.6/include/uapi/linux/netlink.h ./linux-4.4.6/inc
  #define NETLINK_RDMA		20
  #define NETLINK_CRYPTO		21	/* Crypto layer */
 +#define NETLINK_CAMFLOW_IFC_BRIDGE 25 /* CAMFLOW IFC BRIDGE */
-
+ 
  #define NETLINK_INET_DIAG	NETLINK_SOCK_DIAG
-
--#define MAX_LINKS 32
+ 
+-#define MAX_LINKS 32		
 +#define MAX_LINKS 32
-
+ 
  struct sockaddr_nl {
  	__kernel_sa_family_t	nl_family;	/* AF_NETLINK	*/
 diff -uprN ./pristine/linux-4.4.6/include/uapi/linux/provenance.h ./linux-4.4.6/include/uapi/linux/provenance.h
@@ -1286,7 +1286,7 @@ diff -uprN ./pristine/linux-4.4.6/include/uapi/linux/xattr.h ./linux-4.4.6/inclu
 @@ -52,6 +52,11 @@
  #define XATTR_SELINUX_SUFFIX "selinux"
  #define XATTR_NAME_SELINUX XATTR_SECURITY_PREFIX XATTR_SELINUX_SUFFIX
-
+ 
 +#define XATTR_PROVENANCE_SUFFIX "provenance"
 +#define XATTR_NAME_PROVENANCE XATTR_SECURITY_PREFIX XATTR_PROVENANCE_SUFFIX
 +#define XATTR_IFC_SUFFIX "ifc"
@@ -2837,9 +2837,9 @@ diff -uprN ./pristine/linux-4.4.6/security/Kconfig ./linux-4.4.6/security/Kconfi
  source security/yama/Kconfig
 +source security/provenance/Kconfig
 +source security/ifc/Kconfig
-
+ 
  source security/integrity/Kconfig
-
+ 
 @@ -132,6 +134,8 @@ choice
  	default DEFAULT_SECURITY_SMACK if SECURITY_SMACK
  	default DEFAULT_SECURITY_TOMOYO if SECURITY_TOMOYO
@@ -2847,12 +2847,12 @@ diff -uprN ./pristine/linux-4.4.6/security/Kconfig ./linux-4.4.6/security/Kconfi
 +	default DEFAULT_SECURITY_PROVENANCE if SECURITY_PROVENANCE
 +	default DEFAULT_SECURITY_IFC if SECURITY_IFC
  	default DEFAULT_SECURITY_DAC
-
+ 
  	help
 @@ -150,6 +154,12 @@ choice
  	config DEFAULT_SECURITY_APPARMOR
  		bool "AppArmor" if SECURITY_APPARMOR=y
-
+ 
 +	config DEFAULT_SECURITY_PROVENANCE
 +		bool "Provenance" if SECURITY_PROVENANCE=y
 +
@@ -2861,7 +2861,7 @@ diff -uprN ./pristine/linux-4.4.6/security/Kconfig ./linux-4.4.6/security/Kconfi
 +
  	config DEFAULT_SECURITY_DAC
  		bool "Unix Discretionary Access Controls"
-
+ 
 @@ -161,7 +171,8 @@ config DEFAULT_SECURITY
  	default "smack" if DEFAULT_SECURITY_SMACK
  	default "tomoyo" if DEFAULT_SECURITY_TOMOYO
@@ -2869,7 +2869,7 @@ diff -uprN ./pristine/linux-4.4.6/security/Kconfig ./linux-4.4.6/security/Kconfi
 +	default "provenance" if DEFAULT_SECURITY_PROVENANCE
 +	default "ifc" if DEFAULT_SECURITY_IFC
  	default "" if DEFAULT_SECURITY_DAC
-
+ 
  endmenu
 -
 diff -uprN ./pristine/linux-4.4.6/security/Makefile ./linux-4.4.6/security/Makefile
@@ -2881,7 +2881,7 @@ diff -uprN ./pristine/linux-4.4.6/security/Makefile ./linux-4.4.6/security/Makef
  subdir-$(CONFIG_SECURITY_YAMA)		+= yama
 +subdir-$(CONFIG_SECURITY_PROVENANCE)	+= provenance
 +subdir-$(CONFIG_SECURITY_IFC)	+= ifc
-
+ 
  # always enable default capabilities
  obj-y					+= commoncap.o
 @@ -22,6 +24,8 @@ obj-$(CONFIG_AUDIT)			+= lsm_audit.o
@@ -2891,7 +2891,7 @@ diff -uprN ./pristine/linux-4.4.6/security/Makefile ./linux-4.4.6/security/Makef
 +obj-$(CONFIG_SECURITY_PROVENANCE)		+= provenance/
 +obj-$(CONFIG_SECURITY_IFC)		+= ifc/
  obj-$(CONFIG_CGROUP_DEVICE)		+= device_cgroup.o
-
+ 
  # Object integrity file lists
 diff -uprN ./pristine/linux-4.4.6/security/provenance/fs.c ./linux-4.4.6/security/provenance/fs.c
 --- ./pristine/linux-4.4.6/security/provenance/fs.c	1970-01-01 01:00:00.000000000 +0100
@@ -4297,7 +4297,7 @@ diff -uprN ./pristine/linux-4.4.6/security/security.c ./linux-4.4.6/security/sec
 @@ -66,6 +66,12 @@ int __init security_init(void)
  	 */
  	do_security_initcalls();
-
+ 
 +	/*
 +	* Load IFC and Provenance module
 +	*/
@@ -4306,3 +4306,4 @@ diff -uprN ./pristine/linux-4.4.6/security/security.c ./linux-4.4.6/security/sec
 +
  	return 0;
  }
+ 
