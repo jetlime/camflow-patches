@@ -1,11 +1,12 @@
 kernel-version=4.4.21
+lsm-version=0.1.6
 arch=x86_64
 
 prepare:
 	mkdir -p build
 	cd ./build && wget https://www.kernel.org/pub/linux/kernel/v4.x/linux-$(kernel-version).tar.xz && tar -xvJf linux-$(kernel-version).tar.xz && cd ./linux-$(kernel-version) && $(MAKE) mrproper
-	cd ./build/linux-$(kernel-version) && patch --dry-run -p2 < ../../patch-$(kernel-version)-v0.1.5
-	cd ./build/linux-$(kernel-version) && patch -p2 < ../../patch-$(kernel-version)-v0.1.5
+	cd ./build/linux-$(kernel-version) && patch --dry-run -p2 < ../../patch-$(kernel-version)-v$(lsm-version)
+	cd ./build/linux-$(kernel-version) && patch -p2 < ../../patch-$(kernel-version)-v$(lsm-version)
 
 config:
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
