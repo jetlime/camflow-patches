@@ -1,4 +1,4 @@
-diff -uprN ./pristine/linux-4.9.5/include/linux/cred.h ./linux-4.9.5/include/linux/cred.h
+diff -uprN -b -B ./pristine/linux-4.9.5/include/linux/cred.h ./linux-4.9.5/include/linux/cred.h
 --- ./pristine/linux-4.9.5/include/linux/cred.h	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/include/linux/cred.h	2017-01-23 19:44:14.949586120 +0100
 @@ -139,6 +139,9 @@ struct cred {
@@ -19,27 +19,9 @@ diff -uprN ./pristine/linux-4.9.5/include/linux/cred.h ./linux-4.9.5/include/lin
 
  extern struct user_namespace init_user_ns;
  #ifdef CONFIG_USER_NS
-diff -uprN ./pristine/linux-4.9.5/include/linux/fs.h ./linux-4.9.5/include/linux/fs.h
+diff -uprN -b -B ./pristine/linux-4.9.5/include/linux/fs.h ./linux-4.9.5/include/linux/fs.h
 --- ./pristine/linux-4.9.5/include/linux/fs.h	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/include/linux/fs.h	2017-01-23 19:44:14.949586120 +0100
-@@ -271,7 +271,7 @@ struct iattr {
-  */
- #define FILESYSTEM_MAX_STACK_DEPTH 2
-
--/**
-+/**
-  * enum positive_aop_returns - aop return codes with specific semantics
-  *
-  * @AOP_WRITEPAGE_ACTIVATE: Informs the caller that page writeback has
-@@ -281,7 +281,7 @@ struct iattr {
-  * 			    be a candidate for writeback again in the near
-  * 			    future.  Other callers must be careful to unlock
-  * 			    the page if they get this return.  Returned by
-- * 			    writepage();
-+ * 			    writepage();
-  *
-  * @AOP_TRUNCATED_PAGE: The AOP method that was handed a locked page has
-  *  			unlocked it and the page might have been truncated.
 @@ -619,6 +619,7 @@ struct inode {
 
  #ifdef CONFIG_SECURITY
@@ -48,17 +30,6 @@ diff -uprN ./pristine/linux-4.9.5/include/linux/fs.h ./linux-4.9.5/include/linux
  #endif
 
  	/* Stat data, not accessed from path walking */
-@@ -933,8 +934,8 @@ static inline struct file *get_file(stru
-
- #define	MAX_NON_LFS	((1UL<<31) - 1)
-
--/* Page cache limit. The filesystems should put that into their s_maxbytes
--   limits, otherwise bad things can happen in VM. */
-+/* Page cache limit. The filesystems should put that into their s_maxbytes
-+   limits, otherwise bad things can happen in VM. */
- #if BITS_PER_LONG==32
- #define MAX_LFS_FILESIZE	(((loff_t)PAGE_SIZE << (BITS_PER_LONG-1))-1)
- #elif BITS_PER_LONG==64
 @@ -1355,6 +1356,9 @@ struct super_block {
  	atomic_t		s_active;
  #ifdef CONFIG_SECURITY
@@ -69,33 +40,11 @@ diff -uprN ./pristine/linux-4.9.5/include/linux/fs.h ./linux-4.9.5/include/linux
  #endif
  	const struct xattr_handler **s_xattr;
 
-@@ -2028,7 +2032,7 @@ int sync_inode_metadata(struct inode *in
- struct file_system_type {
- 	const char *name;
- 	int fs_flags;
--#define FS_REQUIRES_DEV		1
-+#define FS_REQUIRES_DEV		1
- #define FS_BINARY_MOUNTDATA	2
- #define FS_HAS_SUBTYPE		4
- #define FS_USERNS_MOUNT		8	/* Can be mounted by userns root */
-@@ -2706,7 +2710,7 @@ extern int kernel_read_file_from_fd(int,
- extern ssize_t kernel_write(struct file *, const char *, size_t, loff_t);
- extern ssize_t __kernel_write(struct file *, const char *, size_t, loff_t *);
- extern struct file * open_exec(const char *);
--
-+
- /* fs/dcache.c -- generic fs support functions */
- extern bool is_subdir(struct dentry *, struct dentry *);
- extern bool path_is_under(struct path *, struct path *);
-diff -uprN ./pristine/linux-4.9.5/include/linux/ipc.h ./linux-4.9.5/include/linux/ipc.h
+diff -uprN -b -B ./pristine/linux-4.9.5/include/linux/ipc.h ./linux-4.9.5/include/linux/ipc.h
 --- ./pristine/linux-4.9.5/include/linux/ipc.h	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/include/linux/ipc.h	2017-01-23 19:44:14.950586128 +0100
-@@ -18,9 +18,12 @@ struct kern_ipc_perm
- 	kgid_t		gid;
- 	kuid_t		cuid;
- 	kgid_t		cgid;
--	umode_t		mode;
-+	umode_t		mode;
+@@ -21,6 +21,9 @@ struct kern_ipc_perm
+ 	umode_t		mode;
  	unsigned long	seq;
  	void		*security;
 +#ifdef CONFIG_SECURITY_PROVENANCE
@@ -104,7 +53,7 @@ diff -uprN ./pristine/linux-4.9.5/include/linux/ipc.h ./linux-4.9.5/include/linu
  };
 
  #endif /* _LINUX_IPC_H */
-diff -uprN ./pristine/linux-4.9.5/include/linux/lsm_hooks.h ./linux-4.9.5/include/linux/lsm_hooks.h
+diff -uprN -b -B ./pristine/linux-4.9.5/include/linux/lsm_hooks.h ./linux-4.9.5/include/linux/lsm_hooks.h
 --- ./pristine/linux-4.9.5/include/linux/lsm_hooks.h	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/include/linux/lsm_hooks.h	2017-01-23 19:44:14.948586113 +0100
 @@ -1928,6 +1928,11 @@ extern void __init yama_add_hooks(void);
@@ -119,7 +68,7 @@ diff -uprN ./pristine/linux-4.9.5/include/linux/lsm_hooks.h ./linux-4.9.5/includ
  #ifdef CONFIG_SECURITY_LOADPIN
  void __init loadpin_add_hooks(void);
  #else
-diff -uprN ./pristine/linux-4.9.5/include/linux/msg.h ./linux-4.9.5/include/linux/msg.h
+diff -uprN -b -B ./pristine/linux-4.9.5/include/linux/msg.h ./linux-4.9.5/include/linux/msg.h
 --- ./pristine/linux-4.9.5/include/linux/msg.h	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/include/linux/msg.h	2017-01-23 19:44:14.950586128 +0100
 @@ -11,6 +11,9 @@ struct msg_msg {
@@ -132,7 +81,7 @@ diff -uprN ./pristine/linux-4.9.5/include/linux/msg.h ./linux-4.9.5/include/linu
  	/* the actual message follows immediately */
  };
 
-diff -uprN ./pristine/linux-4.9.5/include/net/sock.h ./linux-4.9.5/include/net/sock.h
+diff -uprN -b -B ./pristine/linux-4.9.5/include/net/sock.h ./linux-4.9.5/include/net/sock.h
 --- ./pristine/linux-4.9.5/include/net/sock.h	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/include/net/sock.h	2017-01-23 19:44:14.946586098 +0100
 @@ -292,6 +292,7 @@ struct sock_common {
@@ -153,7 +102,7 @@ diff -uprN ./pristine/linux-4.9.5/include/net/sock.h ./linux-4.9.5/include/net/s
  #endif
  	struct sock_cgroup_data	sk_cgrp_data;
  	struct mem_cgroup	*sk_memcg;
-diff -uprN ./pristine/linux-4.9.5/include/uapi/linux/camflow.h ./linux-4.9.5/include/uapi/linux/camflow.h
+diff -uprN -b -B ./pristine/linux-4.9.5/include/uapi/linux/camflow.h ./linux-4.9.5/include/uapi/linux/camflow.h
 --- ./pristine/linux-4.9.5/include/uapi/linux/camflow.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/include/uapi/linux/camflow.h	2017-01-23 19:44:14.947586105 +0100
 @@ -0,0 +1,24 @@
@@ -181,7 +130,7 @@ diff -uprN ./pristine/linux-4.9.5/include/uapi/linux/camflow.h ./linux-4.9.5/inc
 +#define CAMFLOW_VERSION_STR       "v"xstr (CAMFLOW_VERSION_MAJOR)"."xstr (CAMFLOW_VERSION_MINOR)"."xstr (CAMFLOW_VERSION_PATCH)
 +
 +#endif
-diff -uprN ./pristine/linux-4.9.5/include/uapi/linux/Kbuild ./linux-4.9.5/include/uapi/linux/Kbuild
+diff -uprN -b -B ./pristine/linux-4.9.5/include/uapi/linux/Kbuild ./linux-4.9.5/include/uapi/linux/Kbuild
 --- ./pristine/linux-4.9.5/include/uapi/linux/Kbuild	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/include/uapi/linux/Kbuild	2017-01-23 19:44:14.947586105 +0100
 @@ -77,6 +77,7 @@ header-y += bpqether.h
@@ -200,7 +149,7 @@ diff -uprN ./pristine/linux-4.9.5/include/uapi/linux/Kbuild ./linux-4.9.5/includ
  header-y += psci.h
  header-y += ptp_clock.h
  header-y += ptrace.h
-diff -uprN ./pristine/linux-4.9.5/include/uapi/linux/provenance.h ./linux-4.9.5/include/uapi/linux/provenance.h
+diff -uprN -b -B ./pristine/linux-4.9.5/include/uapi/linux/provenance.h ./linux-4.9.5/include/uapi/linux/provenance.h
 --- ./pristine/linux-4.9.5/include/uapi/linux/provenance.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/include/uapi/linux/provenance.h	2017-01-23 19:44:14.948586113 +0100
 @@ -0,0 +1,498 @@
@@ -702,7 +651,7 @@ diff -uprN ./pristine/linux-4.9.5/include/uapi/linux/provenance.h ./linux-4.9.5/
 +};
 +
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/Kconfig ./linux-4.9.5/security/Kconfig
+diff -uprN -b -B ./pristine/linux-4.9.5/security/Kconfig ./linux-4.9.5/security/Kconfig
 --- ./pristine/linux-4.9.5/security/Kconfig	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/security/Kconfig	2017-01-23 19:44:14.820585144 +0100
 @@ -164,6 +164,7 @@ source security/tomoyo/Kconfig
@@ -713,12 +662,7 @@ diff -uprN ./pristine/linux-4.9.5/security/Kconfig ./linux-4.9.5/security/Kconfi
 
  source security/integrity/Kconfig
 
-@@ -205,4 +206,3 @@ config DEFAULT_SECURITY
- 	default "" if DEFAULT_SECURITY_DAC
-
- endmenu
--
-diff -uprN ./pristine/linux-4.9.5/security/Makefile ./linux-4.9.5/security/Makefile
+diff -uprN -b -B ./pristine/linux-4.9.5/security/Makefile ./linux-4.9.5/security/Makefile
 --- ./pristine/linux-4.9.5/security/Makefile	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/security/Makefile	2017-01-23 19:44:14.823585167 +0100
 @@ -8,6 +8,7 @@ subdir-$(CONFIG_SECURITY_SMACK)		+= smac
@@ -737,7 +681,7 @@ diff -uprN ./pristine/linux-4.9.5/security/Makefile ./linux-4.9.5/security/Makef
  obj-$(CONFIG_SECURITY_LOADPIN)		+= loadpin/
  obj-$(CONFIG_CGROUP_DEVICE)		+= device_cgroup.o
 
-diff -uprN ./pristine/linux-4.9.5/security/provenance/fs.c ./linux-4.9.5/security/provenance/fs.c
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/fs.c ./linux-4.9.5/security/provenance/fs.c
 --- ./pristine/linux-4.9.5/security/provenance/fs.c	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/fs.c	2017-01-23 19:44:14.816585113 +0100
 @@ -0,0 +1,714 @@
@@ -1455,7 +1399,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/fs.c ./linux-4.9.5/securit
 +}
 +
 +core_initcall(init_prov_fs);
-diff -uprN ./pristine/linux-4.9.5/security/provenance/hooks.c ./linux-4.9.5/security/provenance/hooks.c
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/hooks.c ./linux-4.9.5/security/provenance/hooks.c
 --- ./pristine/linux-4.9.5/security/provenance/hooks.c	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/hooks.c	2017-01-23 19:44:14.815585106 +0100
 @@ -0,0 +1,1284 @@
@@ -2743,7 +2687,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/hooks.c ./linux-4.9.5/secu
 +	printk(KERN_INFO "Provenance Camflow %s\n", CAMFLOW_VERSION_STR);
 +	printk(KERN_INFO "Provenance hooks ready.\n");
 +}
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/av_utils.h ./linux-4.9.5/security/provenance/include/av_utils.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/av_utils.h ./linux-4.9.5/security/provenance/include/av_utils.h
 --- ./pristine/linux-4.9.5/security/provenance/include/av_utils.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/av_utils.h	2017-01-23 19:44:14.819585136 +0100
 @@ -0,0 +1,1068 @@
@@ -3815,7 +3759,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/av_utils.h ./linux
 +}
 +
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_cgroup.h ./linux-4.9.5/security/provenance/include/provenance_cgroup.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance_cgroup.h ./linux-4.9.5/security/provenance/include/provenance_cgroup.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance_cgroup.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance_cgroup.h	2017-01-23 19:44:14.819585136 +0100
 @@ -0,0 +1,66 @@
@@ -3885,7 +3829,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_cgroup.
 +}
 +
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_filter.h ./linux-4.9.5/security/provenance/include/provenance_filter.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance_filter.h ./linux-4.9.5/security/provenance/include/provenance_filter.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance_filter.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance_filter.h	2017-01-23 19:44:14.817585121 +0100
 @@ -0,0 +1,90 @@
@@ -3979,7 +3923,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_filter.
 +}
 +
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance.h ./linux-4.9.5/security/provenance/include/provenance.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance.h ./linux-4.9.5/security/provenance/include/provenance.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance.h	2017-01-23 19:44:14.817585121 +0100
 @@ -0,0 +1,215 @@
@@ -4198,7 +4142,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance.h ./lin
 +
 +#endif
 +#endif /* _LINUX_PROVENANCE_H */
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_inode.h ./linux-4.9.5/security/provenance/include/provenance_inode.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance_inode.h ./linux-4.9.5/security/provenance/include/provenance_inode.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance_inode.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance_inode.h	2017-01-23 19:44:14.818585129 +0100
 @@ -0,0 +1,142 @@
@@ -4344,7 +4288,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_inode.h
 +	return prov;
 +}
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_long.h ./linux-4.9.5/security/provenance/include/provenance_long.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance_long.h ./linux-4.9.5/security/provenance/include/provenance_long.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance_long.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance_long.h	2017-01-23 19:44:14.819585136 +0100
 @@ -0,0 +1,247 @@
@@ -4595,7 +4539,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_long.h 
 +	__long_record_relation(RL_READ, cnt, pck, FLOW_ALLOWED);
 +}
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_net.h ./linux-4.9.5/security/provenance/include/provenance_net.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance_net.h ./linux-4.9.5/security/provenance/include/provenance_net.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance_net.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance_net.h	2017-01-23 19:44:14.818585129 +0100
 @@ -0,0 +1,200 @@
@@ -4799,7 +4743,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_net.h .
 +	__record_relation(RL_SND_PACKET, &(inode->msg_info.identifier), &(pck->msg_info.identifier), &relation, FLOW_ALLOWED, NULL);
 +}
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_relay.h ./linux-4.9.5/security/provenance/include/provenance_relay.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance_relay.h ./linux-4.9.5/security/provenance/include/provenance_relay.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance_relay.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance_relay.h	2017-01-23 19:44:14.818585129 +0100
 @@ -0,0 +1,95 @@
@@ -4898,7 +4842,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_relay.h
 +}
 +
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_secctx.h ./linux-4.9.5/security/provenance/include/provenance_secctx.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance_secctx.h ./linux-4.9.5/security/provenance/include/provenance_secctx.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance_secctx.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance_secctx.h	2017-01-23 19:44:14.820585144 +0100
 @@ -0,0 +1,66 @@
@@ -4968,7 +4912,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_secctx.
 +}
 +
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_task.h ./linux-4.9.5/security/provenance/include/provenance_task.h
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/include/provenance_task.h ./linux-4.9.5/security/provenance/include/provenance_task.h
 --- ./pristine/linux-4.9.5/security/provenance/include/provenance_task.h	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/include/provenance_task.h	2017-01-23 19:44:14.817585121 +0100
 @@ -0,0 +1,179 @@
@@ -5151,7 +5095,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/include/provenance_task.h 
 +   }
 + */
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/Kconfig ./linux-4.9.5/security/provenance/Kconfig
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/Kconfig ./linux-4.9.5/security/provenance/Kconfig
 --- ./pristine/linux-4.9.5/security/provenance/Kconfig	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/Kconfig	2017-01-23 19:44:14.814585098 +0100
 @@ -0,0 +1,18 @@
@@ -5173,7 +5117,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/Kconfig ./linux-4.9.5/secu
 +	  This option activate whole system provenance capture from boot.
 +
 +	  If you are unsure how to answer this question, answer N.
-diff -uprN ./pristine/linux-4.9.5/security/provenance/Makefile ./linux-4.9.5/security/provenance/Makefile
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/Makefile ./linux-4.9.5/security/provenance/Makefile
 --- ./pristine/linux-4.9.5/security/provenance/Makefile	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/Makefile	2017-01-23 19:44:14.814585098 +0100
 @@ -0,0 +1,8 @@
@@ -5185,7 +5129,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/Makefile ./linux-4.9.5/sec
 +provenance-y := relay.o hooks.o fs.o netfilter.o
 +
 +ccflags-y := -I$(srctree)/security/provenance/include
-diff -uprN ./pristine/linux-4.9.5/security/provenance/netfilter.c ./linux-4.9.5/security/provenance/netfilter.c
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/netfilter.c ./linux-4.9.5/security/provenance/netfilter.c
 --- ./pristine/linux-4.9.5/security/provenance/netfilter.c	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/netfilter.c	2017-01-23 19:44:14.815585106 +0100
 @@ -0,0 +1,71 @@
@@ -5260,7 +5204,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/netfilter.c ./linux-4.9.5/
 +}
 +module_init(provenance_nf_init);
 +#endif
-diff -uprN ./pristine/linux-4.9.5/security/provenance/relay.c ./linux-4.9.5/security/provenance/relay.c
+diff -uprN -b -B ./pristine/linux-4.9.5/security/provenance/relay.c ./linux-4.9.5/security/provenance/relay.c
 --- ./pristine/linux-4.9.5/security/provenance/relay.c	1970-01-01 01:00:00.000000000 +0100
 +++ ./linux-4.9.5/security/provenance/relay.c	2017-01-23 19:44:14.816585113 +0100
 @@ -0,0 +1,95 @@
@@ -5359,7 +5303,7 @@ diff -uprN ./pristine/linux-4.9.5/security/provenance/relay.c ./linux-4.9.5/secu
 +}
 +
 +core_initcall(relay_prov_init);
-diff -uprN ./pristine/linux-4.9.5/security/security.c ./linux-4.9.5/security/security.c
+diff -uprN -b -B ./pristine/linux-4.9.5/security/security.c ./linux-4.9.5/security/security.c
 --- ./pristine/linux-4.9.5/security/security.c	2017-01-20 10:56:02.000000000 +0100
 +++ ./linux-4.9.5/security/security.c	2017-01-23 19:44:14.824585174 +0100
 @@ -20,6 +20,7 @@
