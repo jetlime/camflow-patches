@@ -7,7 +7,7 @@
 Automated Travis test verifies:
 - patch can be applied to the kernel;
 - the kernel build correctly;
-- due to execution time constraints only current major version is tested (i.e. 0.2.x).
+- due to execution time constraints only the latest release is tested.
 
 # Releases
 
