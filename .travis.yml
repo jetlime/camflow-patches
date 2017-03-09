@@ -11,56 +11,40 @@ before_install:
   - sudo apt-get -y install libedit-dev
 
 before_script:
-  - cd ./v0.1.0 && make prepare
-  - cd ./v0.1.0 && make config_travis
-  - cd ./v0.1.1 && make prepare
-  - cd ./v0.1.1 && make config_travis
-  - cd ./v0.1.2 && make prepare
-  - cd ./v0.1.2 && make config_travis
-  - cd ./v0.1.3 && make prepare
-  - cd ./v0.1.3 && make config_travis
-  - cd ./v0.1.4 && make prepare
-  - cd ./v0.1.4 && make config_travis
-  - cd ./v0.1.5 && make prepare
-  - cd ./v0.1.5 && make config_travis
-  - cd ./v0.1.6 && make prepare
-  - cd ./v0.1.6 && make config_travis
-  - cd ./v0.1.7 && make prepare
-  - cd ./v0.1.7 && make config_travis
-  - cd ./v0.1.8 && make prepare
-  - cd ./v0.1.8 && make config_travis
-  - cd ./v0.1.9 && make prepare
-  - cd ./v0.1.9 && make config_travis
-  - cd ./v0.1.10 && make prepare
-  - cd ./v0.1.10 && make config_travis
-  - cd ./v0.1.11 && make prepare
-  - cd ./v0.1.11 && make config_travis
-  - cd ./v0.2.0 && make prepare
-  - cd ./v0.2.0 && make config_travis
-  - cd ./v0.2.1 && make prepare
-  - cd ./v0.2.1 && make config_travis
-  - cd ./v0.2.2 && make prepare
-  - cd ./v0.2.2 && make config_travis
-  - cd ./v0.2.3 && make prepare
-  - cd ./v0.2.3 && make config_travis
+  - cd ./v0.1.0 && make prepare && make config_travis
+  - cd ../v0.1.1 && make prepare && make config_travis
+  - cd ../v0.1.2 && make prepare && make config_travis
+  - cd ../v0.1.3 && make prepare && make config_travis
+  - cd ../v0.1.4 && make prepare && make config_travis
+  - cd ../v0.1.5 && make prepare && make config_travis
+  - cd ../v0.1.6 && make prepare && make config_travis
+  - cd ../v0.1.7 && make prepare && make config_travis
+  - cd ../v0.1.8 && make prepare && make config_travis
+  - cd ../v0.1.9 && make prepare && make config_travis
+  - cd ../v0.1.10 && make prepare && make config_travis
+  - cd ../v0.1.11 && make prepare && make config_travis
+  - cd ../v0.2.0 && make prepare && make config_travis
+  - cd ../v0.2.1 && make prepare && make config_travis
+  - cd ../v0.2.2 && make prepare && make config_travis
+  - cd ../v0.2.3 && make prepare && make config_travis
 
 script:
   - cd ./v0.1.0 && make compile
-  - cd ./v0.1.1 && make compile
-  - cd ./v0.1.2 && make compile
-  - cd ./v0.1.3 && make compile
-  - cd ./v0.1.4 && make compile
-  - cd ./v0.1.5 && make compile
-  - cd ./v0.1.6 && make compile
-  - cd ./v0.1.7 && make compile
-  - cd ./v0.1.8 && make compile
-  - cd ./v0.1.9 && make compile
-  - cd ./v0.1.10 && make compile
-  - cd ./v0.1.11 && make compile
-  - cd ./v0.2.0 && make compile
+  - cd ../v0.1.1 && make compile
+  - cd ../v0.1.2 && make compile
+  - cd ../v0.1.3 && make compile
+  - cd ../v0.1.4 && make compile
+  - cd ../v0.1.5 && make compile
+  - cd ../v0.1.6 && make compile
+  - cd ../v0.1.7 && make compile
+  - cd ../v0.1.8 && make compile
+  - cd ../v0.1.9 && make compile
+  - cd ../v0.1.10 && make compile
+  - cd ../v0.1.11 && make compile
+  - cd ../v0.2.0 && make compile
   - cd ./v0.2.1 && make compile
-  - cd ./v0.2.2 && make compile
-  - cd ./v0.2.3 && make compile
+  - cd ../v0.2.2 && make compile
+  - cd ../v0.2.3 && make compile
 
 notifications:
   slack: camflow:T3Umf9cAIwKnaxFEkjeZV7RM
