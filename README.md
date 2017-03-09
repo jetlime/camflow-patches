@@ -1,5 +1,15 @@
+# Build Status
+
+| Branch | Status                                                                                  |
+|--------|-----------------------------------------------------------------------------------------|
+| master | [![Master Build Status](https://api.travis-ci.org/CamFlow/camflow-patches.svg?branch=master)](https://travis-ci.org/CamFlow/camflow-patches/branches)  |
+
+# Releases
+
 | CamFlow version | Kernel version | Date       |
 | --------------- |----------------| ---------- |
+| 0.2.3           | 4.9.13         | 09/03/2017 |
+| 0.2.2           | 4.9.9          | 14/02/2017 |
 | 0.2.1           | 4.9.5          | 03/02/2017	|
 | 0.2.0           | 4.9.5          | 23/01/2017 |
 | 0.1.11          | 4.4.36         | 05/12/2016 |

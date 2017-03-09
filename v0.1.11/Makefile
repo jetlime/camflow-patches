@@ -15,6 +15,10 @@ config:
 	cd ./build/linux-$(kernel-version) &&  mv config_strip .config
 	cd ./build/linux-$(kernel-version) && $(MAKE) menuconfig
 
+config_travis:
+	cd ./build/linux-$(kernel-version) && cp ../../.config .config
+	cd ./build/linux-$(kernel-version) && $(MAKE) defconfig
+
 compile:
 	cd ./build/linux-$(kernel-version) && $(MAKE) -j4
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
