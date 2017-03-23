@@ -1,0 +1,4776 @@
+diff -uprN -b -B ./pristine/linux-4.10.5/include/linux/camflow_query.h ./linux-4.10.5/include/linux/camflow_query.h
+--- ./pristine/linux-4.10.5/include/linux/camflow_query.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/include/linux/camflow_query.h	2017-03-23 15:17:52.591223707 +0000
+@@ -0,0 +1,33 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@g.harvard.edu>
++ *
++ * Copyright (C) 2017 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++ #ifndef __LINUX_CAMFLOW_QUERY_H
++ #define __LINUX_CAMFLOW_QUERY_H
++
++ #include <uapi/linux/provenance.h>
++
++ #define CAMFLOW_RAISE_WARNING  1
++ #define CAMFLOW_PREVENT_FLOW   2
++
++ #define QUERY_HOOK_INIT(HEAD, HOOK) .HEAD=&HOOK
++
++struct provenance_query_hooks {
++  struct list_head list;
++  int (*out_edge)(union prov_msg*, union prov_msg*);
++  int (*in_edge)(union prov_msg*, union prov_msg*);
++};
++
++ extern struct list_head provenance_query_hooks;
++
++int register_camflow_query_hook( struct provenance_query_hooks *hook);
++int unregister_camflow_query_hook( struct provenance_query_hooks *hook);
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/include/linux/cred.h ./linux-4.10.5/include/linux/cred.h
+--- ./pristine/linux-4.10.5/include/linux/cred.h	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/include/linux/cred.h	2017-03-23 15:17:52.482222348 +0000
+@@ -139,6 +139,9 @@ struct cred {
+ #endif
+ #ifdef CONFIG_SECURITY
+ 	void		*security;	/* subjective LSM security */
++#ifdef CONFIG_SECURITY_PROVENANCE
++	void            *provenance;    /* subjective LSM provenance */
++#endif
+ #endif
+ 	struct user_struct *user;	/* real user ID subscription */
+ 	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
+@@ -363,6 +366,7 @@ static inline void put_cred(const struct
+ #define current_cap()		(current_cred_xxx(cap_effective))
+ #define current_user()		(current_cred_xxx(user))
+ #define current_security()	(current_cred_xxx(security))
++#define current_provenance() (current_cred_xxx(provenance))
+ 
+ extern struct user_namespace init_user_ns;
+ #ifdef CONFIG_USER_NS
+diff -uprN -b -B ./pristine/linux-4.10.5/include/linux/fs.h ./linux-4.10.5/include/linux/fs.h
+--- ./pristine/linux-4.10.5/include/linux/fs.h	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/include/linux/fs.h	2017-03-23 15:17:52.520222821 +0000
+@@ -568,6 +568,9 @@ struct inode {
+ 
+ #ifdef CONFIG_SECURITY
+ 	void			*i_security;
++#ifdef CONFIG_SECURITY_PROVENANCE
++	void 			*i_provenance;
++#endif
+ #endif
+ 
+ 	/* Stat data, not accessed from path walking */
+@@ -1304,6 +1307,9 @@ struct super_block {
+ 	atomic_t		s_active;
+ #ifdef CONFIG_SECURITY
+ 	void                    *s_security;
++#ifdef CONFIG_SECURITY_PROVENANCE
++	void 										*s_provenance;
++#endif
+ #endif
+ 	const struct xattr_handler **s_xattr;
+ 
+diff -uprN -b -B ./pristine/linux-4.10.5/include/linux/ipc.h ./linux-4.10.5/include/linux/ipc.h
+--- ./pristine/linux-4.10.5/include/linux/ipc.h	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/include/linux/ipc.h	2017-03-23 15:17:52.545223133 +0000
+@@ -21,6 +21,9 @@ struct kern_ipc_perm
+ 	umode_t		mode; 
+ 	unsigned long	seq;
+ 	void		*security;
++#ifdef CONFIG_SECURITY_PROVENANCE
++	void 		*provenance;
++#endif
+ };
+ 
+ #endif /* _LINUX_IPC_H */
+diff -uprN -b -B ./pristine/linux-4.10.5/include/linux/lsm_hooks.h ./linux-4.10.5/include/linux/lsm_hooks.h
+--- ./pristine/linux-4.10.5/include/linux/lsm_hooks.h	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/include/linux/lsm_hooks.h	2017-03-23 15:17:52.546223146 +0000
+@@ -1928,6 +1928,11 @@ extern void __init yama_add_hooks(void);
+ #else
+ static inline void __init yama_add_hooks(void) { }
+ #endif
++#ifdef CONFIG_SECURITY_PROVENANCE
++extern void __init provenance_add_hooks(void);
++#else
++static inline void __init provenance_add_hooks(void) { }
++#endif
+ #ifdef CONFIG_SECURITY_LOADPIN
+ void __init loadpin_add_hooks(void);
+ #else
+diff -uprN -b -B ./pristine/linux-4.10.5/include/linux/msg.h ./linux-4.10.5/include/linux/msg.h
+--- ./pristine/linux-4.10.5/include/linux/msg.h	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/include/linux/msg.h	2017-03-23 15:17:52.546223146 +0000
+@@ -11,6 +11,9 @@ struct msg_msg {
+ 	size_t m_ts;		/* message text size */
+ 	struct msg_msgseg *next;
+ 	void *security;
++#ifdef CONFIG_SECURITY_PROVENANCE
++	void *provenance;
++#endif
+ 	/* the actual message follows immediately */
+ };
+ 
+diff -uprN -b -B ./pristine/linux-4.10.5/include/net/sock.h ./linux-4.10.5/include/net/sock.h
+--- ./pristine/linux-4.10.5/include/net/sock.h	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/include/net/sock.h	2017-03-23 15:17:52.608223919 +0000
+@@ -292,6 +292,7 @@ struct sock_common {
+   *	@sk_peek_off: current peek_offset value
+   *	@sk_send_head: front of stuff to transmit
+   *	@sk_security: used by security modules
++  *	@sk_provenance: used by provenance modules
+   *	@sk_mark: generic packet mark
+   *	@sk_cgrp_data: cgroup data for this cgroup
+   *	@sk_memcg: this socket's memory cgroup association
+@@ -455,6 +456,9 @@ struct sock {
+ 	void			*sk_user_data;
+ #ifdef CONFIG_SECURITY
+ 	void			*sk_security;
++#ifdef CONFIG_SECURITY_PROVENANCE
++	void 			*sk_provenance;
++#endif
+ #endif
+ 	struct sock_cgroup_data	sk_cgrp_data;
+ 	struct mem_cgroup	*sk_memcg;
+diff -uprN -b -B ./pristine/linux-4.10.5/include/uapi/linux/camflow.h ./linux-4.10.5/include/uapi/linux/camflow.h
+--- ./pristine/linux-4.10.5/include/uapi/linux/camflow.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/include/uapi/linux/camflow.h	2017-03-23 15:17:52.608223919 +0000
+@@ -0,0 +1,26 @@
++/*
++ *
++ * Author: Thomas Pasquier <thomas.pasquier@cl.cam.ac.uk>
++ *
++ * Copyright (C) 2016 University of Cambridge
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef _UAPI_LINUX_CAMFLOW_H
++#define _UAPI_LINUX_CAMFLOW_H
++
++#define xstr(s) str(s)
++#define str(s) # s
++
++#define CAMFLOW_VERSION_MAJOR     0
++#define CAMFLOW_VERSION_MINOR     3
++#define CAMFLOW_VERSION_PATCH     0
++#define CAMFLOW_VERSION_STR "v"xstr(CAMFLOW_VERSION_MAJOR)\
++  "."xstr(CAMFLOW_VERSION_MINOR)\
++  "."xstr(CAMFLOW_VERSION_PATCH)\
++
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/include/uapi/linux/Kbuild ./linux-4.10.5/include/uapi/linux/Kbuild
+--- ./pristine/linux-4.10.5/include/uapi/linux/Kbuild	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/include/uapi/linux/Kbuild	2017-03-23 15:17:52.608223919 +0000
+@@ -78,6 +78,7 @@ header-y += bpqether.h
+ header-y += bsg.h
+ header-y += bt-bmc.h
+ header-y += btrfs.h
++header-y += camflow.h
+ header-y += can.h
+ header-y += capability.h
+ header-y += capi.h
+@@ -349,6 +350,7 @@ header-y += ppp_defs.h
+ header-y += ppp-ioctl.h
+ header-y += pps.h
+ header-y += prctl.h
++header-y += provenance.h
+ header-y += psci.h
+ header-y += ptp_clock.h
+ header-y += ptrace.h
+diff -uprN -b -B ./pristine/linux-4.10.5/include/uapi/linux/provenance.h ./linux-4.10.5/include/uapi/linux/provenance.h
+--- ./pristine/linux-4.10.5/include/uapi/linux/provenance.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/include/uapi/linux/provenance.h	2017-03-23 15:17:52.609223931 +0000
+@@ -0,0 +1,504 @@
++/*
++ *
++ * Author: Thomas Pasquier <thomas.pasquier@cl.cam.ac.uk>
++ *
++ * Copyright (C) 2015 University of Cambridge
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef _UAPI_LINUX_PROVENANCE_H
++#define _UAPI_LINUX_PROVENANCE_H
++
++#ifndef __KERNEL__
++#include <linux/limits.h>
++#else
++#include <linux/socket.h>
++#include <linux/limits.h>
++#include <linux/mutex.h>
++#endif
++
++#define PROV_GOLDEN_RATIO_64 0x61C8864680B583EBUL
++static inline uint32_t prov_hash(uint64_t val)
++{
++	return (val * PROV_GOLDEN_RATIO_64) >> (64 - 8);
++}
++
++#define PROV_K_HASH 7
++#define PROV_M_BITS 256
++#define PROV_N_BYTES (PROV_M_BITS / 8)
++#define PROV_BYTE_INDEX(a) (a / 8)
++#define PROV_BIT_INDEX(a) (a % 8)
++
++static inline void prov_bloom_add(uint8_t bloom[PROV_N_BYTES], uint64_t val)
++{
++	uint8_t i;
++	uint32_t pos;
++
++	for (i = 0; i < PROV_K_HASH; i++) {
++		pos = prov_hash(val + i) % PROV_M_BITS;
++		bloom[PROV_BYTE_INDEX(pos)] |= 1 << PROV_BIT_INDEX(pos);
++	}
++}
++
++// djb2 hash implementation by Dan Bernstein
++static inline uint64_t djb2_hash(const char *str)
++{
++	uint64_t hash = 5381;
++	int c = *str;
++
++	while (c) {
++		hash = ((hash<<5)+hash) + c;
++		c = *++str;
++	}
++	return hash;
++}
++#define generate_tag(str) djb2_hash(str)
++
++/* element in set belong to super */
++static inline bool prov_bloom_match(const uint8_t super[PROV_N_BYTES], const uint8_t set[PROV_N_BYTES])
++{
++	uint8_t i;
++
++	for (i = 0; i < PROV_N_BYTES; i++)
++		if ((super[i] & set[i]) != set[i])
++			return false;
++	return true;
++}
++
++static inline bool prov_bloom_in(const uint8_t bloom[PROV_N_BYTES], uint64_t val)
++{
++	uint8_t tmp[PROV_N_BYTES];
++
++	memset(tmp, 0, PROV_N_BYTES);
++	prov_bloom_add(tmp, val);
++	return prov_bloom_match(bloom, tmp);
++}
++
++/* merge src into dest (dest=dest U src) */
++static inline void prov_bloom_merge(uint8_t dest[PROV_N_BYTES], const uint8_t src[PROV_N_BYTES])
++{
++	uint8_t i;
++
++	for (i = 0; i < PROV_N_BYTES; i++)
++		dest[i] |= src[i];
++}
++
++
++static inline bool prov_bloom_empty(const uint8_t bloom[PROV_N_BYTES])
++{
++	uint8_t i;
++
++	for (i = 0; i < PROV_N_BYTES; i++)
++		if (bloom[i] != 0)
++			return false;
++	return true;
++}
++
++#define PROV_ENABLE_FILE                      "/sys/kernel/security/provenance/enable"
++#define PROV_ALL_FILE                         "/sys/kernel/security/provenance/all"
++#define PROV_NODE_FILE                        "/sys/kernel/security/provenance/node"
++#define PROV_RELATION_FILE                    "/sys/kernel/security/provenance/relation"
++#define PROV_SELF_FILE                        "/sys/kernel/security/provenance/self"
++#define PROV_MACHINE_ID_FILE                  "/sys/kernel/security/provenance/machine_id"
++#define PROV_NODE_FILTER_FILE                 "/sys/kernel/security/provenance/node_filter"
++#define PROV_RELATION_FILTER_FILE             "/sys/kernel/security/provenance/relation_filter"
++#define PROV_PROPAGATE_NODE_FILTER_FILE       "/sys/kernel/security/provenance/propagate_node_filter"
++#define PROV_PROPAGATE_RELATION_FILTER_FILE   "/sys/kernel/security/provenance/propagate_relation_filter"
++#define PROV_FLUSH_FILE                       "/sys/kernel/security/provenance/flush"
++#define PROV_PROCESS_FILE                     "/sys/kernel/security/provenance/process"
++#define PROV_IPV4_INGRESS_FILE                "/sys/kernel/security/provenance/ipv4_ingress"
++#define PROV_IPV4_EGRESS_FILE                 "/sys/kernel/security/provenance/ipv4_egress"
++#define PROV_SECCTX                           "/sys/kernel/security/provenance/secctx"
++#define PROV_SECCTX_FILTER                    "/sys/kernel/security/provenance/secctx_filter"
++#define PROV_CGROUP_FILTER										"/sys/kernel/security/provenance/cgroup"
++#define PROV_LOG_FILE													"/sys/kernel/security/provenance/log"
++#define PROV_LOGP_FILE												"/sys/kernel/security/provenance/logp"
++
++#define PROV_RELAY_NAME                       "/sys/kernel/debug/provenance"
++#define PROV_LONG_RELAY_NAME                  "/sys/kernel/debug/long_provenance"
++
++#define TYPE_MASK             0xFFFF000000000000UL
++#define SUBTYPE_MASK          0x0000FFFFFFFFFFFFUL
++
++#define W3C_TYPE(type)        (type & TYPE_MASK)
++#define SUBTYPE(type)         (type & SUBTYPE_MASK)
++
++/* W3C PROV TYPES */
++#define DM_RELATION           0x8000000000000000UL
++#define DM_ACTIVITY           0x4000000000000000UL
++#define DM_ENTITY             0x2000000000000000UL
++#define DM_AGENT              0x1000000000000000UL
++/* ALLOWED/DISALLOWED */
++#define RL_ALLOWED            0x0200000000000000UL
++#define RL_DISALLOWED         0x0100000000000000UL
++/* SUBTYPES */
++/* RELATIONS W3C TYPE*/
++#define RL_DERIVED            (DM_RELATION | 0x0080000000000000ULL)
++#define RL_GENERATED          (DM_RELATION | 0x0040000000000000ULL)
++#define RL_ATTRIBUTED         (DM_RELATION | 0x0020000000000000ULL)
++#define RL_USED               (DM_RELATION | 0x0010000000000000ULL)
++#define RL_INFORMED           (DM_RELATION | 0x0008000000000000ULL)
++#define RL_ASSOCIATED         (DM_RELATION | 0x0004000000000000ULL)
++#define RL_BEHALF             (DM_RELATION | 0x0002000000000000ULL)
++#define RL_UNKNOWN            (DM_RELATION | 0x0001000000000000ULL)
++/* DERIVED SUBTYPES */
++#define RL_NAMED              (RL_DERIVED   | 0x0000000000000001ULL)
++#define RL_VERSION            (RL_DERIVED   | 0x0000000000000002ULL)
++#define RL_MMAP               (RL_DERIVED   | 0x0000000000000004ULL)
++#define RL_SND_PACKET         (RL_DERIVED   | 0x0000000000000008ULL)
++#define RL_RCV_PACKET         (RL_DERIVED   | 0x0000000000000010ULL)
++/* GENERATED SUBTYPES */
++#define RL_CREATE             (RL_GENERATED | 0x0000000000000020ULL)
++#define RL_WRITE              (RL_GENERATED | 0x0000000000000040ULL)
++#define RL_PERM_WRITE         (RL_GENERATED | 0x0000000000000080ULL)
++#define RL_MMAP_WRITE         (RL_GENERATED | 0x0000000000000100ULL)
++#define RL_SH_WRITE           (RL_GENERATED | 0x0000000000000200ULL)
++#define RL_CONNECT            (RL_GENERATED | 0x0000000000000400ULL)
++#define RL_LISTEN             (RL_GENERATED | 0x0000000000000800ULL)
++#define RL_BIND               (RL_GENERATED | 0x0000000000001000ULL)
++#define RL_SND                (RL_GENERATED | 0x0000000000002000ULL)
++#define RL_LINK               (RL_GENERATED | 0x0000000000004000ULL)
++#define RL_SETATTR            (RL_GENERATED | 0x0000000000008000ULL)
++#define RL_SETXATTR           (RL_GENERATED | 0x0000000000010000ULL)
++#define RL_RMVXATTR           (RL_GENERATED | 0x0000000000020000ULL)
++/* USED SUBTYPES */
++#define RL_READ               (RL_USED      | 0x0000000000040000ULL)
++#define RL_MMAP_READ          (RL_USED      | 0x0000000000080000ULL)
++#define RL_PERM_READ          (RL_USED      | 0x0000000000100000ULL)
++#define RL_SH_READ            (RL_USED      | 0x0000000000200000ULL)
++#define RL_EXEC               (RL_USED      | 0x0000000000400000ULL)
++#define RL_MMAP_EXEC          (RL_USED      | 0x0000000000800000ULL)
++#define RL_PERM_EXEC          (RL_USED      | 0x0000000001000000ULL)
++#define RL_ACCEPT             (RL_USED      | 0x0000000002000000ULL)
++#define RL_RCV                (RL_USED      | 0x0000000004000000ULL)
++#define RL_OPEN               (RL_USED      | 0x0000000008000000ULL)
++#define RL_SEARCH             (RL_USED      | 0x0000000010000000ULL)
++#define RL_GETATTR            (RL_USED      | 0x0000000020000000ULL)
++#define RL_READLINK           (RL_USED      | 0x0000000040000000ULL)
++#define RL_GETXATTR           (RL_USED      | 0x0000000080000000ULL)
++#define RL_LSTXATTR           (RL_USED      | 0x0000000100000000ULL)
++#define RL_NAMED_PROCESS      (RL_USED      | 0x0000000200000000ULL)
++#define RL_SAID								(RL_USED      | 0x0000000400000000ULL)
++/* INFORMED SUBTYPES */
++#define RL_CLONE              (RL_INFORMED  | 0x0000000800000000ULL)
++#define RL_VERSION_PROCESS    (RL_INFORMED  | 0x0000001000000000ULL)
++#define RL_CHANGE             (RL_INFORMED  | 0x0000002000000000ULL)
++#define RL_EXEC_PROCESS       (RL_INFORMED  | 0x0000004000000000ULL)
++
++/* ACTIVITY SUBTYPES */
++#define ACT_TASK              (DM_ACTIVITY  | 0x0000000000000001ULL)
++#define ACT_DISC              (DM_ACTIVITY  | 0x0000000000000002ULL)
++/* AGENT SUBTYPES */
++#define AGT_USR               (DM_AGENT     | 0x0000000000000004ULL)
++#define AGT_GRP               (DM_AGENT     | 0x0000000000000008ULL)
++#define AGT_DISC              (DM_AGENT     | 0x0000000000000010ULL)
++/* ENTITY SUBTYPES */
++#define ENT_STR               (DM_ENTITY    | 0x0000000000000020ULL)
++#define ENT_INODE_UNKNOWN     (DM_ENTITY    | 0x0000000000000040ULL)
++#define ENT_INODE_LINK        (DM_ENTITY    | 0x0000000000000080ULL)
++#define ENT_INODE_FILE        (DM_ENTITY    | 0x0000000000000100ULL)
++#define ENT_INODE_DIRECTORY   (DM_ENTITY    | 0x0000000000000200ULL)
++#define ENT_INODE_CHAR        (DM_ENTITY    | 0x0000000000000400ULL)
++#define ENT_INODE_BLOCK       (DM_ENTITY    | 0x0000000000000800ULL)
++#define ENT_INODE_FIFO        (DM_ENTITY    | 0x0000000000001000ULL)
++#define ENT_INODE_SOCKET      (DM_ENTITY    | 0x0000000000002000ULL)
++#define ENT_INODE_MMAP        (DM_ENTITY    | 0x0000000000004000ULL)
++#define ENT_MSG               (DM_ENTITY    | 0x0000000000008000ULL)
++#define ENT_SHM               (DM_ENTITY    | 0x0000000000010000ULL)
++#define ENT_ADDR              (DM_ENTITY    | 0x0000000000020000ULL)
++#define ENT_SBLCK             (DM_ENTITY    | 0x0000000000040000ULL)
++#define ENT_FILE_NAME         (DM_ENTITY    | 0x0000000000080000ULL)
++#define ENT_PACKET            (DM_ENTITY    | 0x0000000000100000ULL)
++#define ENT_DISC              (DM_ENTITY    | 0x0000000000200000ULL)
++#define ENT_IATTR             (DM_ENTITY    | 0x0000000000400000ULL)
++#define ENT_XATTR             (DM_ENTITY    | 0x0000000000800000ULL)
++#define ENT_PCKCNT						(DM_ENTITY    | 0x0000000001000000ULL)
++
++#define FLOW_ALLOWED        0
++#define FLOW_DISALLOWED     1
++
++#define prov_type(prov)               ((prov)->node_info.identifier.node_id.type)
++#define node_type(node) prov_type(node)
++#define edge_type(edge) prov_type(edge)
++#define prov_id_buffer(prov)          ((prov)->node_info.identifier.buffer)
++#define node_identifier(node)         ((node)->node_info.identifier.node_id)
++#define relation_identifier(relation) ((relation)->relation_info.identifier.relation_id)
++#define packet_identifier(packet)     ((packet)->pck_info.identifier.packet_id)
++#define prov_is_relation(prov)        ((relation_identifier(prov).type & DM_RELATION) != 0)
++#define prov_is_node(prov)            ((node_identifier(prov).type & DM_RELATION) == 0)
++#define node_secid(node)              ((node)->node_info.secid)
++
++#define prov_flag(prov) ((prov)->msg_info.flag)
++#define prov_taint(prov) ((prov)->msg_info.taint)
++#define prov_jiffies(prov) ((prov)->msg_info.jiffies)
++
++struct node_identifier {
++	uint64_t type;
++	uint64_t id;
++	uint32_t boot_id;
++	uint32_t machine_id;
++	uint32_t version;
++};
++
++struct relation_identifier {
++	uint64_t type;
++	uint64_t id;
++	uint32_t boot_id;
++	uint32_t machine_id;
++};
++
++struct packet_identifier {
++	uint64_t type;
++	uint16_t id;
++	uint32_t snd_ip;
++	uint32_t rcv_ip;
++	uint16_t snd_port;
++	uint16_t rcv_port;
++	uint8_t protocol;
++	uint32_t seq;
++};
++
++#define PROV_IDENTIFIER_BUFFER_LENGTH sizeof(struct node_identifier)
++
++union prov_identifier {
++	struct node_identifier node_id;
++	struct relation_identifier relation_id;
++	struct packet_identifier packet_id;
++	uint8_t buffer[PROV_IDENTIFIER_BUFFER_LENGTH];
++};
++
++#define prov_set_flag(node, nbit) 	(prov_flag(node) |= 1 << nbit)
++#define prov_clear_flag(node, nbit) (prov_flag(node) &= ~(1 << nbit))
++#define prov_check_flag(node, nbit) ((prov_flag(node) & (1 << nbit)) == (1 << nbit))
++
++#define RECORDED_BIT 0
++#define set_recorded(node)                  prov_set_flag(node, RECORDED_BIT)
++#define clear_recorded(node)                prov_clear_flag(node, RECORDED_BIT)
++#define provenance_is_recorded(node)        prov_check_flag(node, RECORDED_BIT)
++
++#define NAME_RECORDED_BIT 1
++#define set_name_recorded(node)             prov_set_flag(node, NAME_RECORDED_BIT)
++#define clear_name_recorded(node)           prov_clear_flag(node, NAME_RECORDED_BIT)
++#define provenance_is_name_recorded(node)   prov_check_flag(node, NAME_RECORDED_BIT)
++
++#define TRACKED_BIT 2
++#define set_tracked(node)                   prov_set_flag(node, TRACKED_BIT)
++#define clear_tracked(node)                 prov_clear_flag(node, TRACKED_BIT)
++#define provenance_is_tracked(node)         prov_check_flag(node, TRACKED_BIT)
++
++#define OPAQUE_BIT 3
++#define set_opaque(node)                    prov_set_flag(node, OPAQUE_BIT)
++#define clear_opaque(node)                  prov_clear_flag(node, OPAQUE_BIT)
++#define provenance_is_opaque(node)          prov_check_flag(node, OPAQUE_BIT)
++
++#define PROPAGATE_BIT 4
++#define set_propagate(node)                 prov_set_flag(node, PROPAGATE_BIT)
++#define clear_propagate(node)               prov_clear_flag(node, PROPAGATE_BIT)
++#define provenance_does_propagate(node)     prov_check_flag(node, PROPAGATE_BIT)
++
++#define RECORD_PACKET_BIT 5
++#define set_record_packet(node)							prov_set_flag(node, RECORD_PACKET_BIT)
++#define clear_record_packet(node)						prov_clear_flag(node, RECORD_PACKET_BIT)
++#define provenance_records_packet(node)			prov_check_flag(node, RECORD_PACKET_BIT)
++
++#define basic_elements union prov_identifier identifier; uint8_t flag; uint64_t jiffies; uint32_t secid; uint8_t taint[PROV_N_BYTES]
++
++struct msg_struct {
++	basic_elements;
++};
++
++#define FILE_INFO_SET 0x01
++
++struct relation_struct {
++	basic_elements;
++	uint8_t allowed;
++	union prov_identifier snd;
++	union prov_identifier rcv;
++	uint8_t set;
++	int64_t offset;
++};
++
++struct node_struct {
++	basic_elements;
++};
++
++struct task_prov_struct {
++	basic_elements;
++	uint32_t uid;
++	uint32_t gid;
++	uint32_t pid;
++	uint32_t vpid;
++	uint32_t cid;
++};
++
++struct inode_prov_struct {
++	basic_elements;
++	uint64_t ino;
++	uint32_t uid;
++	uint32_t gid;
++	uint16_t mode;
++	uint8_t sb_uuid[16];
++};
++
++struct iattr_prov_struct {
++	basic_elements;
++	uint32_t valid;
++	uint16_t mode;
++	uint32_t uid;
++	uint32_t gid;
++	int64_t size;
++	int64_t atime;
++	int64_t ctime;
++	int64_t mtime;
++};
++
++struct msg_msg_struct {
++	basic_elements;
++	long type;
++};
++
++struct shm_struct {
++	basic_elements;
++	uint16_t mode;
++};
++
++struct sb_struct {
++	basic_elements;
++	uint8_t uuid[16];
++};
++
++struct pck_struct {
++	basic_elements;
++	uint16_t length;
++};
++
++union prov_msg {
++	struct msg_struct msg_info;
++	struct relation_struct relation_info;
++	struct node_struct node_info;
++	struct task_prov_struct task_info;
++	struct inode_prov_struct inode_info;
++	struct msg_msg_struct msg_msg_info;
++	struct shm_struct shm_info;
++	struct sb_struct sb_info;
++	struct pck_struct pck_info;
++	struct iattr_prov_struct iattr_info;
++};
++
++struct str_struct {
++	basic_elements;
++	char str[PATH_MAX];
++	size_t length;
++};
++
++struct file_name_struct {
++	basic_elements;
++	char name[PATH_MAX];
++	size_t length;
++};
++
++struct address_struct {
++	basic_elements;
++	struct sockaddr addr;
++	size_t length;
++};
++
++#define PROV_TRUNCATED 1
++struct pckcnt_struct {
++	basic_elements;
++	uint8_t content[PATH_MAX];
++	size_t length;
++	uint8_t truncated;
++};
++
++#define PROV_XATTR_NAME_SIZE    256
++#define PROV_XATTR_VALUE_SIZE   (PATH_MAX - PROV_XATTR_NAME_SIZE)
++struct xattr_prov_struct {
++	basic_elements;
++	char name[PROV_XATTR_NAME_SIZE]; // max Linux characters
++	int32_t flags;
++	uint8_t value[PROV_XATTR_VALUE_SIZE];
++	size_t size;
++};
++
++struct disc_node_struct {
++	basic_elements;
++	size_t length;
++	char content[PATH_MAX];
++	union prov_identifier parent;
++};
++
++union long_prov_msg {
++	struct msg_struct msg_info;
++	struct node_struct node_info;
++	struct str_struct str_info;
++	struct file_name_struct file_name_info;
++	struct address_struct address_info;
++	struct pckcnt_struct pckcnt_info;
++	struct disc_node_struct disc_node_info;
++	struct xattr_prov_struct xattr_info;
++};
++
++struct prov_filter {
++	uint64_t filter;
++	uint64_t mask;
++	uint8_t add;
++};
++
++#define PROV_SET_TRACKED      0x01
++#define PROV_SET_OPAQUE       0x02
++#define PROV_SET_PROPAGATE    0x04
++#define PROV_SET_TAINT        0x08
++
++struct prov_process_config {
++	union prov_msg prov;
++	uint8_t op;
++	uint32_t vpid;
++};
++
++#define PROV_NET_TRACKED      0x01
++#define PROV_NET_OPAQUE       0x02
++#define PROV_NET_PROPAGATE    0x04
++#define PROV_NET_TAINT        0x08
++#define PROV_NET_RECORD       0x10
++#define PROV_NET_DELETE       0x20 // to actually delete a filter from the list
++
++struct prov_ipv4_filter {
++	uint32_t ip;
++	uint32_t mask;
++	uint16_t port;
++	uint8_t op;
++	uint64_t taint;
++};
++
++#define PROV_SEC_TRACKED      0x01
++#define PROV_SEC_OPAQUE       0x02
++#define PROV_SEC_PROPAGATE    0x04
++#define PROV_SEC_TAINT        0x08
++#define PROV_SEC_DELETE       0x10 // to actually delete a filter from the list
++
++struct secinfo {
++	uint32_t secid;
++	char secctx[PATH_MAX];
++	uint32_t len;
++	uint8_t op;
++	uint64_t taint;
++};
++
++#define PROV_CGROUP_TRACKED      0x01
++#define PROV_CGROUP_OPAQUE       0x02
++#define PROV_CGROUP_PROPAGATE    0x04
++#define PROV_CGROUP_TAINT        0x08
++#define PROV_CGROUP_DELETE       0x10 // to actually delete a filter from the list
++
++struct cgroupinfo {
++	uint32_t cid;
++	uint8_t op;
++	uint64_t taint;
++};
++
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/include/uapi/linux/xattr.h ./linux-4.10.5/include/uapi/linux/xattr.h
+--- ./pristine/linux-4.10.5/include/uapi/linux/xattr.h	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/include/uapi/linux/xattr.h	2017-03-23 15:17:52.609223931 +0000
+@@ -52,6 +52,9 @@
+ #define XATTR_SELINUX_SUFFIX "selinux"
+ #define XATTR_NAME_SELINUX XATTR_SECURITY_PREFIX XATTR_SELINUX_SUFFIX
+ 
++#define XATTR_PROVENANCE_SUFFIX "provenance"
++#define XATTR_NAME_PROVENANCE XATTR_SECURITY_PREFIX XATTR_PROVENANCE_SUFFIX
++
+ #define XATTR_SMACK_SUFFIX "SMACK64"
+ #define XATTR_SMACK_IPIN "SMACK64IPIN"
+ #define XATTR_SMACK_IPOUT "SMACK64IPOUT"
+diff -uprN -b -B ./pristine/linux-4.10.5/security/Kconfig ./linux-4.10.5/security/Kconfig
+--- ./pristine/linux-4.10.5/security/Kconfig	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/security/Kconfig	2017-03-23 15:17:52.395221264 +0000
+@@ -164,6 +164,7 @@ source security/tomoyo/Kconfig
+ source security/apparmor/Kconfig
+ source security/loadpin/Kconfig
+ source security/yama/Kconfig
++source security/provenance/Kconfig
+ 
+ source security/integrity/Kconfig
+ 
+diff -uprN -b -B ./pristine/linux-4.10.5/security/Makefile ./linux-4.10.5/security/Makefile
+--- ./pristine/linux-4.10.5/security/Makefile	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/security/Makefile	2017-03-23 15:17:52.396221276 +0000
+@@ -8,6 +8,7 @@ subdir-$(CONFIG_SECURITY_SMACK)		+= smac
+ subdir-$(CONFIG_SECURITY_TOMOYO)        += tomoyo
+ subdir-$(CONFIG_SECURITY_APPARMOR)	+= apparmor
+ subdir-$(CONFIG_SECURITY_YAMA)		+= yama
++subdir-$(CONFIG_SECURITY_PROVENANCE)	+= provenance
+ subdir-$(CONFIG_SECURITY_LOADPIN)	+= loadpin
+ 
+ # always enable default capabilities
+@@ -23,6 +24,7 @@ obj-$(CONFIG_AUDIT)			+= lsm_audit.o
+ obj-$(CONFIG_SECURITY_TOMOYO)		+= tomoyo/
+ obj-$(CONFIG_SECURITY_APPARMOR)		+= apparmor/
+ obj-$(CONFIG_SECURITY_YAMA)		+= yama/
++obj-$(CONFIG_SECURITY_PROVENANCE)		+= provenance/
+ obj-$(CONFIG_SECURITY_LOADPIN)		+= loadpin/
+ obj-$(CONFIG_CGROUP_DEVICE)		+= device_cgroup.o
+ 
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/fs.c ./linux-4.10.5/security/provenance/fs.c
+--- ./pristine/linux-4.10.5/security/provenance/fs.c	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/fs.c	2017-03-23 15:17:52.430221700 +0000
+@@ -0,0 +1,649 @@
++/*
++ *
++ * Author: Thomas Pasquier <thomas.pasquier@cl.cam.ac.uk>
++ *
++ * Copyright (C) 2015 University of Cambridge
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#include <linux/security.h>
++
++#include "provenance.h"
++#include "provenance_long.h"
++#include "provenance_inode.h"
++#include "provenance_task.h"
++#include "provenance_secctx.h"
++#include "provenance_cgroup.h"
++
++#define TMPBUFLEN       12
++
++#define declare_file_operations(ops_name, write_op, read_op) static const struct file_operations ops_name = { \
++		.write		= write_op, \
++		.read		= read_op, \
++		.llseek		= generic_file_llseek, \
++}
++
++static ssize_t no_read(struct file *filp, char __user *buf,
++		       size_t count, loff_t *ppos)
++{
++	return -EPERM; // write only
++}
++
++static ssize_t no_write(struct file *file, const char __user *buf,
++			size_t count, loff_t *ppos)
++{
++	return -EPERM; // read only
++}
++
++static inline void __init_opaque(void)
++{
++	provenance_mark_as_opaque(PROV_ENABLE_FILE);
++	provenance_mark_as_opaque(PROV_ALL_FILE);
++	provenance_mark_as_opaque(PROV_NODE_FILE);
++	provenance_mark_as_opaque(PROV_RELATION_FILE);
++	provenance_mark_as_opaque(PROV_SELF_FILE);
++	provenance_mark_as_opaque(PROV_MACHINE_ID_FILE);
++	provenance_mark_as_opaque(PROV_NODE_FILTER_FILE);
++	provenance_mark_as_opaque(PROV_RELATION_FILTER_FILE);
++	provenance_mark_as_opaque(PROV_PROPAGATE_NODE_FILTER_FILE);
++	provenance_mark_as_opaque(PROV_PROPAGATE_RELATION_FILTER_FILE);
++	provenance_mark_as_opaque(PROV_FLUSH_FILE);
++	provenance_mark_as_opaque(PROV_PROCESS_FILE);
++	provenance_mark_as_opaque(PROV_IPV4_INGRESS_FILE);
++	provenance_mark_as_opaque(PROV_IPV4_EGRESS_FILE);
++	provenance_mark_as_opaque(PROV_SECCTX);
++	provenance_mark_as_opaque(PROV_SECCTX_FILTER);
++	provenance_mark_as_opaque(PROV_CGROUP_FILTER);
++	provenance_mark_as_opaque(PROV_LOG_FILE);
++	provenance_mark_as_opaque(PROV_LOGP_FILE);
++}
++
++static inline ssize_t __write_flag(struct file *file, const char __user *buf,
++				   size_t count, loff_t *ppos, bool *flag)
++
++{
++	char *page = NULL;
++	ssize_t length;
++	bool new_value;
++	uint32_t tmp;
++
++	/* no partial write */
++	if (*ppos > 0)
++		return -EINVAL;
++
++	if (!capable(CAP_AUDIT_CONTROL))
++		return -EPERM;
++
++	page = (char *)get_zeroed_page(GFP_KERNEL);
++	if (!page)
++		return -ENOMEM;
++
++	length =  -EFAULT;
++	if (copy_from_user(page, buf, count))
++		goto out;
++
++	length = kstrtouint(page, 2, &tmp);
++	if (length)
++		goto out;
++
++	new_value = tmp;
++	(*flag) = new_value;
++	length = count;
++out:
++	free_page((unsigned long)page);
++	return length;
++}
++
++static ssize_t __read_flag(struct file *filp, char __user *buf,
++			   size_t count, loff_t *ppos, bool flag)
++{
++	char tmpbuf[TMPBUFLEN];
++	ssize_t length;
++	int tmp = flag;
++
++	length = scnprintf(tmpbuf, TMPBUFLEN, "%d", tmp);
++	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
++}
++
++#define declare_write_flag_fcn(fcn_name, flag) static ssize_t fcn_name(struct file *file, const char __user *buf, size_t count, loff_t *ppos) \
++	{ \
++		return __write_flag(file, buf, count, ppos, &flag); \
++	}
++#define declare_read_flag_fcn(fcn_name, flag) static ssize_t fcn_name(struct file *filp, char __user *buf, size_t count, loff_t *ppos) \
++	{ \
++		return __read_flag(filp, buf, count, ppos, flag); \
++	}
++
++declare_write_flag_fcn(prov_write_enable, prov_enabled);
++declare_read_flag_fcn(prov_read_enable, prov_enabled);
++declare_file_operations(prov_enable_ops, prov_write_enable, prov_read_enable);
++
++declare_write_flag_fcn(prov_write_all, prov_all);
++declare_read_flag_fcn(prov_read_all, prov_all);
++declare_file_operations(prov_all_ops, prov_write_all, prov_read_all);
++
++static ssize_t prov_write_machine_id(struct file *file, const char __user *buf,
++				     size_t count, loff_t *ppos)
++{
++	uint32_t *tmp = (uint32_t *)buf;
++
++	// ideally should be decoupled from set machine id
++	__init_opaque();
++
++	if (!capable(CAP_AUDIT_CONTROL))
++		return -EPERM;
++
++	if (count < sizeof(uint32_t))
++		return -ENOMEM;
++
++	if (copy_from_user(&prov_machine_id, tmp, sizeof(uint32_t)))
++		return -EAGAIN;
++
++	return count; // read only
++}
++
++static ssize_t prov_read_machine_id(struct file *filp, char __user *buf,
++				    size_t count, loff_t *ppos)
++{
++	if (count < sizeof(uint32_t))
++		return -ENOMEM;
++
++	if (copy_to_user(buf, &prov_machine_id, sizeof(uint32_t)))
++		return -EAGAIN;
++
++	return count;
++}
++declare_file_operations(prov_machine_id_ops, prov_write_machine_id, prov_read_machine_id);
++
++static ssize_t prov_write_node(struct file *file, const char __user *buf,
++			       size_t count, loff_t *ppos)
++
++{
++	struct provenance *cprov = current_provenance();
++	union long_prov_msg *node = NULL;
++
++	if (!capable(CAP_AUDIT_WRITE))
++		return -EPERM;
++
++	if (count < sizeof(struct disc_node_struct))
++		return -ENOMEM;
++
++	node = kzalloc(sizeof(union long_prov_msg), GFP_KERNEL);
++	if (!node)
++		return -ENOMEM;
++
++	if (copy_from_user(node, buf, sizeof(struct disc_node_struct))) {
++		count = -ENOMEM;
++		goto out;
++	}
++	if (prov_type(node) == ENT_DISC || prov_type(node) == ACT_DISC || prov_type(node) == AGT_DISC) {
++		spin_lock_nested(prov_lock(cprov), PROVENANCE_LOCK_TASK);
++		__record_node(prov_msg(cprov));
++		copy_node_info(&node->disc_node_info.parent, &prov_msg(cprov)->node_info.identifier);
++		spin_unlock(prov_lock(cprov));
++		node_identifier(node).id = prov_next_node_id();
++		node_identifier(node).boot_id = prov_boot_id;
++		node_identifier(node).machine_id = prov_machine_id;
++		long_prov_write(node);
++	} else{ // the node is not of disclosed type
++		count = -EINVAL;
++		goto out;
++	}
++
++	if (copy_to_user((void *)buf, &node, count)) {
++		count = -ENOMEM;
++		goto out;
++	}
++
++out:
++	if (node != NULL)
++		kfree(node);
++	return count;
++}
++declare_file_operations(prov_node_ops, prov_write_node, no_read);
++
++static ssize_t prov_write_relation(struct file *file, const char __user *buf,
++				   size_t count, loff_t *ppos)
++{
++	union prov_msg relation;
++
++	if (!capable(CAP_AUDIT_WRITE))
++		return -EPERM;
++
++	if (count < sizeof(struct relation_struct))
++		return -ENOMEM;
++
++	if (copy_from_user(&relation, buf, sizeof(struct relation_struct)))
++		return -ENOMEM;
++
++	prov_write(&relation);
++	return count;
++}
++declare_file_operations(prov_relation_ops, prov_write_relation, no_read);
++
++static inline void update_prov_config(union prov_msg *setting, uint8_t op, struct provenance *prov)
++{
++	spin_lock_nested(prov_lock(prov), PROVENANCE_LOCK_TASK);
++	if ((op & PROV_SET_TRACKED) != 0) {
++		if (provenance_is_tracked(setting))
++			set_tracked(prov_msg(prov));
++		else
++			clear_tracked(prov_msg(prov));
++	}
++
++	if ((op & PROV_SET_OPAQUE) != 0) {
++		if (provenance_is_opaque(setting))
++			set_opaque(prov_msg(prov));
++		else
++			clear_opaque(prov_msg(prov));
++	}
++
++	if ((op & PROV_SET_PROPAGATE) != 0) {
++		if (provenance_does_propagate(setting))
++			set_propagate(prov_msg(prov));
++		else
++			clear_propagate(prov_msg(prov));
++	}
++
++	if ((op & PROV_SET_TAINT) != 0)
++		prov_bloom_merge(prov_taint(prov_msg(prov)), prov_taint(setting));
++	spin_unlock(prov_lock(prov));
++}
++
++static ssize_t prov_write_self(struct file *file, const char __user *buf,
++			       size_t count, loff_t *ppos)
++{
++	struct prov_process_config msg;
++	struct provenance *prov = current_provenance();
++
++	if (count < sizeof(struct prov_process_config))
++		return -EINVAL;
++
++	if (copy_from_user(&msg, buf, sizeof(struct prov_process_config)))
++		return -ENOMEM;
++
++	update_prov_config(&(msg.prov), msg.op, prov);
++	return sizeof(struct prov_process_config);
++}
++
++static ssize_t prov_read_self(struct file *filp, char __user *buf,
++			      size_t count, loff_t *ppos)
++{
++	struct provenance *cprov = current_provenance();
++	union prov_msg *tmp = (union prov_msg *)buf;
++
++	if (count < sizeof(struct task_prov_struct))
++		return -ENOMEM;
++
++	spin_lock_nested(prov_lock(cprov), PROVENANCE_LOCK_TASK);
++	if (copy_to_user(tmp, prov_msg(cprov), sizeof(union prov_msg)))
++		count = -EAGAIN;
++	spin_unlock(prov_lock(cprov));
++	return count; // write only
++}
++declare_file_operations(prov_self_ops, prov_write_self, prov_read_self);
++
++static inline ssize_t __write_filter(struct file *file, const char __user *buf,
++				     size_t count, uint64_t *filter)
++{
++	struct prov_filter *setting;
++
++	if (!capable(CAP_AUDIT_CONTROL))
++		return -EPERM;
++
++	if (count < sizeof(struct prov_filter))
++		return -ENOMEM;
++
++	setting = (struct prov_filter *)buf;
++
++	if (setting->add != 0)
++		(*filter) |= setting->filter & setting->mask;
++	else
++		(*filter) &=  ~(setting->filter & setting->mask);
++
++	return count;
++}
++
++static inline ssize_t __read_filter(struct file *filp, char __user *buf,
++				    size_t count, uint64_t filter)
++{
++	if (count < sizeof(uint64_t))
++		return -ENOMEM;
++
++	if (copy_to_user(buf, &filter, sizeof(uint64_t)))
++		return -EAGAIN;
++
++	return count;
++}
++
++#define declare_write_filter_fcn(fcn_name, filter) static ssize_t fcn_name(struct file *file, const char __user *buf, size_t count, loff_t *ppos) \
++	{ \
++		return __write_filter(file, buf, count, &filter); \
++	}
++#define declare_reader_filter_fcn(fcn_name, filter) static ssize_t fcn_name(struct file *filp, char __user *buf, size_t count, loff_t *ppos) \
++	{ \
++		return __read_filter(filp, buf, count, filter); \
++	}
++
++uint64_t prov_node_filter;
++declare_write_filter_fcn(prov_write_node_filter, prov_node_filter);
++declare_reader_filter_fcn(prov_read_node_filter, prov_node_filter);
++declare_file_operations(prov_node_filter_ops, prov_write_node_filter, prov_read_node_filter);
++
++uint64_t prov_relation_filter;
++declare_write_filter_fcn(prov_write_relation_filter, prov_relation_filter);
++declare_reader_filter_fcn(prov_read_relation_filter, prov_relation_filter);
++declare_file_operations(prov_relation_filter_ops, prov_write_relation_filter, prov_read_relation_filter);
++
++uint64_t prov_propagate_node_filter;
++declare_write_filter_fcn(prov_write_propagate_node_filter, prov_propagate_node_filter);
++declare_reader_filter_fcn(prov_read_propagate_node_filter, prov_propagate_node_filter);
++declare_file_operations(prov_propagate_node_filter_ops, prov_write_propagate_node_filter, prov_read_propagate_node_filter);
++
++uint64_t prov_propagate_relation_filter;
++declare_write_filter_fcn(prov_write_propagate_relation_filter, prov_propagate_relation_filter);
++declare_reader_filter_fcn(prov_read_propagate_relation_filter, prov_propagate_relation_filter);
++declare_file_operations(prov_propagate_relation_filter_ops, prov_write_propagate_relation_filter, prov_read_propagate_relation_filter);
++
++static ssize_t prov_write_flush(struct file *file, const char __user *buf,
++				size_t count, loff_t *ppos)
++
++{
++	if (!capable(CAP_AUDIT_CONTROL))
++		return -EPERM;
++
++	prov_flush();
++	return 0;
++}
++declare_file_operations(prov_flush_ops, prov_write_flush, no_read);
++
++static ssize_t prov_write_process(struct file *file, const char __user *buf,
++				  size_t count, loff_t *ppos)
++{
++	struct prov_process_config msg;
++	struct provenance *prov;
++
++	if (!capable(CAP_AUDIT_CONTROL))
++		return -EPERM;
++
++	if (count < sizeof(struct prov_process_config))
++		return -EINVAL;
++
++	if (copy_from_user(&msg, buf, sizeof(struct prov_process_config)))
++		return -ENOMEM;
++
++	prov = prov_from_vpid(msg.vpid);
++	if (!prov)
++		return -EINVAL;
++
++	update_prov_config(&(msg.prov), msg.op, prov);
++	return sizeof(struct prov_process_config);
++}
++
++static ssize_t prov_read_process(struct file *filp, char __user *buf,
++				 size_t count, loff_t *ppos)
++{
++	struct prov_process_config *msg;
++	struct provenance *prov;
++	int rtn = sizeof(struct prov_process_config);
++
++	if (count < sizeof(struct prov_process_config))
++		return -EINVAL;
++
++	msg = (struct prov_process_config *)buf;
++
++	prov = prov_from_vpid(msg->vpid);
++	if (!prov)
++		return -EINVAL;
++
++	spin_lock_nested(prov_lock(prov), PROVENANCE_LOCK_TASK);
++	if (copy_to_user(&msg->prov, prov_msg(prov), sizeof(union prov_msg)))
++		rtn = -ENOMEM;
++	spin_unlock(prov_lock(prov));
++	return rtn;
++}
++declare_file_operations(prov_process_ops, prov_write_process, prov_read_process);
++
++static inline ssize_t __write_ipv4_filter(struct file *file, const char __user *buf,
++					  size_t count, struct list_head *filters)
++{
++	struct ipv4_filters     *f;
++
++	if (!capable(CAP_AUDIT_CONTROL))
++		return -EPERM;
++
++	if (count < sizeof(struct prov_ipv4_filter))
++		return -ENOMEM;
++
++	f = kzalloc(sizeof(struct ipv4_filters), GFP_KERNEL);
++	if (!f)
++		return -ENOMEM;
++
++	if (copy_from_user(&f->filter, buf, sizeof(struct prov_ipv4_filter)))
++		return -EAGAIN;
++	f->filter.ip = f->filter.ip & f->filter.mask;
++
++	// we are not trying to delete something
++	if ((f->filter.op & PROV_NET_DELETE) != PROV_NET_DELETE)
++		prov_ipv4_add_or_update(filters, f);
++	else
++		prov_ipv4_delete(filters, f);
++	return sizeof(struct prov_ipv4_filter);
++}
++
++static inline ssize_t __read_ipv4_filter(struct file *filp, char __user *buf,
++					 size_t count, struct list_head *filters)
++{
++	struct list_head *listentry, *listtmp;
++	struct ipv4_filters *tmp;
++	size_t pos = 0;
++
++	if (count < sizeof(struct prov_ipv4_filter))
++		return -ENOMEM;
++
++	list_for_each_safe(listentry, listtmp, filters) {
++		tmp = list_entry(listentry, struct ipv4_filters, list);
++		if (count < pos + sizeof(struct prov_ipv4_filter))
++			return -ENOMEM;
++
++		if (copy_to_user(buf + pos, &(tmp->filter), sizeof(struct prov_ipv4_filter)))
++			return -EAGAIN;
++
++		pos += sizeof(struct prov_ipv4_filter);
++	}
++	return pos;
++}
++
++#define declare_write_ipv4_filter_fcn(fcn_name, filter) static ssize_t fcn_name(struct file *file, const char __user *buf, size_t count, loff_t *ppos) \
++	{ \
++		return __write_ipv4_filter(file, buf, count, &filter); \
++	}
++#define declare_reader_ipv4_filter_fcn(fcn_name, filter) static ssize_t fcn_name(struct file *filp, char __user *buf, size_t count, loff_t *ppos) \
++	{ \
++		return __read_ipv4_filter(filp, buf, count, &filter); \
++	}
++
++declare_write_ipv4_filter_fcn(prov_write_ipv4_ingress_filter, ingress_ipv4filters);
++declare_reader_ipv4_filter_fcn(prov_read_ipv4_ingress_filter, ingress_ipv4filters);
++declare_file_operations(prov_ipv4_ingress_filter_ops, prov_write_ipv4_ingress_filter, prov_read_ipv4_ingress_filter);
++
++declare_write_ipv4_filter_fcn(prov_write_ipv4_egress_filter, egress_ipv4filters);
++declare_reader_ipv4_filter_fcn(prov_read_ipv4_egress_filter, egress_ipv4filters);
++declare_file_operations(prov_ipv4_egress_filter_ops, prov_write_ipv4_egress_filter, prov_read_ipv4_egress_filter);
++
++static ssize_t prov_read_secctx(struct file *filp, char __user *buf,
++				size_t count, loff_t *ppos)
++{
++	char *ctx = NULL;
++	uint32_t len;
++	struct secinfo *data;
++	int rtn = 0;
++
++	if (count < sizeof(struct secinfo))
++		return -ENOMEM;
++	data = (struct secinfo *)buf;
++
++	rtn = security_secid_to_secctx(data->secid, &ctx, &len); // read secctx
++	if (rtn < 0)
++		goto out;
++	if (len < PATH_MAX) {
++		if (copy_to_user(data->secctx, ctx, len)) {
++			rtn = -ENOMEM;
++			goto out;
++		}
++		data->secctx[len] = '\0'; // maybe unecessary
++		data->len = len;
++	} else
++		rtn = -ENOMEM;
++out:
++	security_release_secctx(ctx, len); // security module dealloc
++	return rtn;
++}
++declare_file_operations(prov_secctx_ops, no_write, prov_read_secctx);
++
++static ssize_t prov_write_secctx_filter(struct file *file, const char __user *buf,
++					size_t count, loff_t *ppos)
++{
++	struct secctx_filters *s;
++
++	if (count < sizeof(struct secinfo))
++		return -ENOMEM;
++
++	s = kzalloc(sizeof(struct secctx_filters), GFP_KERNEL);
++	if (!s)
++		return -ENOMEM;
++
++	if (copy_from_user(&s->filter, buf, sizeof(struct secinfo)))
++		return -EAGAIN;
++
++	security_secctx_to_secid(s->filter.secctx, s->filter.len, &s->filter.secid);
++	if ((s->filter.op & PROV_SEC_DELETE) != PROV_SEC_DELETE)
++		prov_secctx_add_or_update(s);
++	else
++		prov_secctx_delete(s);
++	return 0;
++}
++
++static ssize_t prov_read_secctx_filter(struct file *filp, char __user *buf,
++				       size_t count, loff_t *ppos)
++{
++	struct list_head *listentry, *listtmp;
++	struct secctx_filters *tmp;
++	size_t pos = 0;
++
++	if (count < sizeof(struct secinfo))
++		return -ENOMEM;
++
++	list_for_each_safe(listentry, listtmp, &secctx_filters) {
++		tmp = list_entry(listentry, struct secctx_filters, list);
++		if (count < pos + sizeof(struct secinfo))
++			return -ENOMEM;
++
++		if (copy_to_user(buf + pos, &(tmp->filter), sizeof(struct secinfo)))
++			return -EAGAIN;
++		pos += sizeof(struct secinfo);
++	}
++	return pos;
++}
++declare_file_operations(prov_secctx_filter_ops, prov_write_secctx_filter, prov_read_secctx_filter);
++
++static ssize_t prov_write_cgroup_filter(struct file *file, const char __user *buf,
++					size_t count, loff_t *ppos)
++{
++	struct cgroup_filters *s;
++
++	if (count < sizeof(struct cgroupinfo))
++		return -ENOMEM;
++
++	s = kzalloc(sizeof(struct cgroup_filters), GFP_KERNEL);
++	if (!s)
++		return -ENOMEM;
++
++	if (copy_from_user(&s->filter, buf, sizeof(struct cgroupinfo)))
++		return -EAGAIN;
++	if ((s->filter.op & PROV_CGROUP_DELETE) != PROV_CGROUP_DELETE)
++		prov_cgroup_add_or_update(s);
++	else
++		prov_cgroup_delete(s);
++	return 0;
++}
++
++static ssize_t prov_read_cgroup_filter(struct file *filp, char __user *buf,
++				       size_t count, loff_t *ppos)
++{
++	struct list_head *listentry, *listtmp;
++	struct cgroup_filters *tmp;
++	size_t pos = 0;
++
++	if (count < sizeof(struct cgroupinfo))
++		return -ENOMEM;
++
++	list_for_each_safe(listentry, listtmp, &cgroup_filters) {
++		tmp = list_entry(listentry, struct cgroup_filters, list);
++		if (count < pos + sizeof(struct cgroupinfo))
++			return -ENOMEM;
++		if (copy_to_user(buf + pos, &(tmp->filter), sizeof(struct cgroupinfo)))
++			return -EAGAIN;
++		pos += sizeof(struct cgroupinfo);
++	}
++	return pos;
++}
++declare_file_operations(prov_cgroup_filter_ops, prov_write_cgroup_filter, prov_read_cgroup_filter);
++
++static ssize_t prov_write_log(struct file *file, const char __user *buf,
++			      size_t count, loff_t *ppos)
++{
++	struct provenance *cprov = current_provenance();
++
++	if (count <= 0 || count >= PATH_MAX)
++		return 0;
++	set_tracked(prov_msg(cprov));
++	return record_log(prov_msg(cprov), buf, count);
++}
++declare_file_operations(prov_log_ops, prov_write_log, no_read);
++
++static ssize_t prov_write_logp(struct file *file, const char __user *buf,
++			       size_t count, loff_t *ppos)
++{
++	struct provenance *cprov = current_provenance();
++
++	if (count <= 0 || count >= PATH_MAX)
++		return 0;
++	set_tracked(prov_msg(cprov));
++	set_propagate(prov_msg(cprov));
++	return record_log(prov_msg(cprov), buf, count);
++}
++declare_file_operations(prov_logp_ops, prov_write_logp, no_read);
++
++static int __init init_prov_fs(void)
++{
++	struct dentry *prov_dir;
++
++	prov_dir = securityfs_create_dir("provenance", NULL);
++	securityfs_create_file("enable", 0644, prov_dir, NULL, &prov_enable_ops);
++	securityfs_create_file("all", 0644, prov_dir, NULL, &prov_all_ops);
++	securityfs_create_file("node", 0666, prov_dir, NULL, &prov_node_ops);
++	securityfs_create_file("relation", 0666, prov_dir, NULL, &prov_relation_ops);
++	securityfs_create_file("self", 0666, prov_dir, NULL, &prov_self_ops);
++	securityfs_create_file("machine_id", 0444, prov_dir, NULL, &prov_machine_id_ops);
++	securityfs_create_file("node_filter", 0644, prov_dir, NULL, &prov_node_filter_ops);
++	securityfs_create_file("relation_filter", 0644, prov_dir, NULL, &prov_relation_filter_ops);
++	securityfs_create_file("propagate_node_filter", 0644, prov_dir, NULL, &prov_propagate_node_filter_ops);
++	securityfs_create_file("propagate_relation_filter", 0644, prov_dir, NULL, &prov_propagate_relation_filter_ops);
++	securityfs_create_file("flush", 0600, prov_dir, NULL, &prov_flush_ops);
++	securityfs_create_file("process", 0644, prov_dir, NULL, &prov_process_ops);
++	securityfs_create_file("ipv4_ingress", 0644, prov_dir, NULL, &prov_ipv4_ingress_filter_ops);
++	securityfs_create_file("ipv4_egress", 0644, prov_dir, NULL, &prov_ipv4_egress_filter_ops);
++	securityfs_create_file("secctx", 0644, prov_dir, NULL, &prov_secctx_ops);
++	securityfs_create_file("secctx_filter", 0644, prov_dir, NULL, &prov_secctx_filter_ops);
++	securityfs_create_file("cgroup", 0644, prov_dir, NULL, &prov_cgroup_filter_ops);
++	securityfs_create_file("log", 0666, prov_dir, NULL, &prov_log_ops);
++	securityfs_create_file("logp", 0666, prov_dir, NULL, &prov_logp_ops);
++	pr_info("Provenance: fs ready.\n");
++	return 0;
++}
++core_initcall(init_prov_fs);
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/hooks.c ./linux-4.10.5/security/provenance/hooks.c
+--- ./pristine/linux-4.10.5/security/provenance/hooks.c	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/hooks.c	2017-03-23 15:17:52.436221775 +0000
+@@ -0,0 +1,1488 @@
++/*
++ *
++ * Author: Thomas Pasquier <thomas.pasquier@cl.cam.ac.uk>
++ *
++ * Copyright (C) 2015 University of Cambridge
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#include <linux/slab.h>
++#include <linux/lsm_hooks.h>
++#include <linux/msg.h>
++#include <net/sock.h>
++#include <linux/binfmts.h>
++#include <linux/random.h>
++#include <linux/xattr.h>
++#include <linux/file.h>
++#include <linux/workqueue.h>
++
++#include "av_utils.h"
++#include "provenance.h"
++#include "provenance_net.h"
++#include "provenance_inode.h"
++#include "provenance_task.h"
++#include "provenance_long.h"
++#include "provenance_secctx.h"
++#include "provenance_cgroup.h"
++
++struct save_work {
++	struct work_struct work;
++	struct dentry *dentry;
++};
++
++static void __do_prov_save(struct work_struct *pwork)
++{
++	struct save_work *w = container_of(pwork, struct save_work, work);
++	struct dentry *dentry = w->dentry;
++
++	if (!dentry)
++		goto free_work;
++	save_provenance(dentry);
++free_work:
++	kfree(w);
++}
++
++static struct workqueue_struct *prov_queue;
++static void queue_save_provenance(struct provenance *provenance,
++																	struct dentry *dentry)
++{
++	struct save_work *work;
++
++	if (!prov_queue)
++		return;
++	// not initialised or already saved
++	if (!provenance->initialised || provenance->saved)
++		return;
++	work = kmalloc(sizeof(struct save_work), GFP_ATOMIC);
++	if (!work)
++		return;
++	work->dentry = dentry;
++	INIT_WORK(&work->work, __do_prov_save);
++	queue_work(prov_queue, &work->work);
++}
++
++/*
++ * initialise the security for the init task
++ */
++static void cred_init_provenance(void)
++{
++	struct cred *cred = (struct cred *)current->real_cred;
++	struct provenance *prov = alloc_provenance(ACT_TASK, GFP_KERNEL);
++
++	if (!prov)
++		panic("Provenance:  Failed to initialize initial task.\n");
++	prov_msg(prov)->task_info.uid = __kuid_val(cred->euid);
++	prov_msg(prov)->task_info.gid = __kgid_val(cred->egid);
++	cred->provenance = prov;
++}
++
++/*
++ * @cred points to the credentials.
++ * @gfp indicates the atomicity of any memory allocations.
++ * Only allocate sufficient memory and attach to @cred such that
++ * cred_transfer() will not get ENOMEM.
++ */
++static int provenance_cred_alloc_blank(struct cred *cred, gfp_t gfp)
++{
++	struct provenance *prov  = alloc_provenance(ACT_TASK, gfp);
++
++	if (!prov)
++		return -ENOMEM;
++
++	prov_msg(prov)->task_info.uid = __kuid_val(cred->euid);
++	prov_msg(prov)->task_info.gid = __kgid_val(cred->egid);
++
++	cred->provenance = prov;
++	return 0;
++}
++
++/*
++ * @cred points to the credentials.
++ * Deallocate and clear the cred->security field in a set of credentials.
++ */
++static void provenance_cred_free(struct cred *cred)
++{
++	free_provenance(cred->provenance);
++	cred->provenance = NULL;
++}
++
++/*
++ * @new points to the new credentials.
++ * @old points to the original credentials.
++ * @gfp indicates the atomicity of any memory allocations.
++ * Prepare a new set of credentials by copying the data from the old set.
++ */
++static int provenance_cred_prepare(struct cred *new,
++																		const struct cred *old,
++																		gfp_t gfp)
++{
++	struct provenance *old_prov = old->provenance;
++	struct provenance *prov = alloc_provenance(ACT_TASK, gfp);
++	unsigned long irqflags;
++
++	if (!prov)
++		return -ENOMEM;
++	//task_config_from_file(current);
++	prov_msg(prov)->task_info.uid = __kuid_val(new->euid);
++	prov_msg(prov)->task_info.gid = __kgid_val(new->egid);
++	spin_lock_irqsave_nested(prov_lock(old_prov), irqflags, PROVENANCE_LOCK_TASK);
++	prov->has_mmap = old_prov->has_mmap;
++	flow_between_activities(RL_CLONE, old_prov, prov, FLOW_ALLOWED, NULL);
++	spin_unlock_irqrestore(prov_lock(old_prov), irqflags);
++	new->provenance = prov;
++	return 0;
++}
++
++/*
++ * @new points to the new credentials.
++ * @old points to the original credentials.
++ * Transfer data from original creds to new creds
++ */
++static void provenance_cred_transfer(struct cred *new, const struct cred *old)
++{
++	const struct provenance *old_prov = old->provenance;
++	struct provenance *prov = new->provenance;
++
++	*prov =  *old_prov;
++}
++
++/*
++ * Update the module's state after setting one or more of the user
++ * identity attributes of the current process.  The @flags parameter
++ * indicates which of the set*uid system calls invoked this hook.if
++ * @new is the set of credentials that will be installed.  Modifications
++ * should be made to this rather than to @current->cred.
++ * @old is the set of credentials that are being replaces
++ * @flags contains one of the LSM_SETID_* values.
++ * Return 0 on success.
++ */
++static int provenance_task_fix_setuid(struct cred *new,
++																			const struct cred *old,
++																			int flags)
++{
++	struct provenance *old_prov = old->provenance;
++	struct provenance *prov = new->provenance;
++	unsigned long irqflags;
++
++	spin_lock_irqsave_nested(prov_lock(old_prov), irqflags, PROVENANCE_LOCK_TASK);
++	flow_between_activities(RL_CHANGE, old_prov, prov, FLOW_ALLOWED, NULL);
++	spin_unlock_irqrestore(prov_lock(old_prov), irqflags);
++	return 0;
++}
++
++/*
++ * Allocate and attach a security structure to @inode->i_security.  The
++ * i_security field is initialized to NULL when the inode structure is
++ * allocated.
++ * @inode contains the inode structure.
++ * Return 0 if operation was successful.
++ */
++static int provenance_inode_alloc_security(struct inode *inode)
++{
++	struct provenance *iprov = alloc_provenance(ENT_INODE_UNKNOWN, GFP_KERNEL);
++	struct provenance *sprov;
++
++	if (unlikely(!iprov))
++		return -ENOMEM;
++	prov_msg(iprov)->inode_info.ino = inode->i_ino;
++	prov_msg(iprov)->inode_info.uid = __kuid_val(inode->i_uid);
++	prov_msg(iprov)->inode_info.gid = __kgid_val(inode->i_gid);
++	security_inode_getsecid(inode, &(prov_msg(iprov)->inode_info.secid));
++	update_inode_type(inode->i_mode, iprov);
++	sprov = inode->i_sb->s_provenance;
++	memcpy(prov_msg(iprov)->inode_info.sb_uuid, prov_msg(sprov)->sb_info.uuid, 16 * sizeof(uint8_t));
++	inode->i_provenance = iprov;
++	refresh_inode_provenance(inode);
++	return 0;
++}
++
++/*
++ * @inode contains the inode structure.
++ * Deallocate the inode security structure and set @inode->i_security to
++ * NULL.
++ */
++static void provenance_inode_free_security(struct inode *inode)
++{
++	free_provenance(inode->i_provenance);
++	inode->i_provenance = NULL;
++}
++
++/*
++ * Check permission to create a regular file.
++ * @dir contains inode structure of the parent of the new file.
++ * @dentry contains the dentry structure for the file to be created.
++ * @mode contains the file mode of the file to be created.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_create(struct inode *dir,
++																		struct dentry *dentry,
++																		umode_t mode)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = dir->i_provenance;
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_DIR);
++	flow_from_activity(RL_WRITE, cprov, iprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before accessing an inode.  This hook is called by the
++ * existing Linux permission function, so a security module can use it to
++ * provide additional checking for existing Linux permission checks.
++ * Notice that this hook is called when a file is opened (as well as many
++ * other operations), whereas the file_security_ops permission hook is
++ * called when the actual read/write operations are performed.
++ * @inode contains the inode structure to check.
++ * @mask contains the permission mask.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_permission(struct inode *inode, int mask)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = NULL;
++	uint32_t perms;
++	unsigned long irqflags;
++
++	if (!mask)
++		return 0;
++	if (unlikely(IS_PRIVATE(inode)))
++		return 0;
++	iprov = inode_provenance(inode, false);
++	if (!iprov)
++		return -ENOMEM;
++	refresh_current_provenance();
++	refresh_inode_provenance(inode);
++	perms = file_mask_to_perms(inode->i_mode, mask);
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	if (is_inode_dir(inode)) {
++		if ((perms & (DIR__WRITE)) != 0)
++			flow_from_activity(RL_PERM_WRITE, cprov, iprov, FLOW_ALLOWED, NULL);
++		if ((perms & (DIR__READ)) != 0)
++			flow_to_activity(RL_PERM_READ, iprov, cprov, FLOW_ALLOWED, NULL);
++		if ((perms & (DIR__SEARCH)) != 0)
++			flow_to_activity(RL_PERM_EXEC, iprov, cprov, FLOW_ALLOWED, NULL);
++	} else if (is_inode_socket(inode)) {
++		if ((perms & (FILE__WRITE | FILE__APPEND)) != 0)
++			flow_from_activity(RL_PERM_WRITE, cprov, iprov, FLOW_ALLOWED, NULL);
++		if ((perms & (FILE__READ)) != 0)
++			flow_to_activity(RL_PERM_READ, iprov, cprov, FLOW_ALLOWED, NULL);
++	} else {
++		if ((perms & (FILE__WRITE | FILE__APPEND)) != 0)
++			flow_from_activity(RL_PERM_WRITE, cprov, iprov, FLOW_ALLOWED, NULL);
++		if ((perms & (FILE__READ)) != 0)
++			flow_to_activity(RL_PERM_READ, iprov, cprov, FLOW_ALLOWED, NULL);
++		if ((perms & (FILE__EXECUTE)) != 0)
++			flow_to_activity(RL_PERM_EXEC, iprov, cprov, FLOW_ALLOWED, NULL);
++	}
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before creating a new hard link to a file.
++ * @old_dentry contains the dentry structure for an existing
++ * link to the file.
++ * @dir contains the inode structure of the parent directory
++ * of the new link.
++ * @new_dentry contains the dentry structure for the new link.
++ * Return 0 if permission is granted.
++ */
++
++static int provenance_inode_link(struct dentry *old_dentry,
++																	struct inode *dir,
++																	struct dentry *new_dentry)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *dprov = NULL;
++	struct provenance *iprov;
++	unsigned long irqflags;
++
++	iprov = dentry_provenance(old_dentry);
++	if (!iprov)
++		return -ENOMEM;
++
++	dprov = dir->i_provenance;
++	if (!dprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(dprov), PROVENANCE_LOCK_DIR);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_from_activity(RL_LINK, cprov, dprov, FLOW_ALLOWED, NULL);
++	flow_from_activity(RL_LINK, cprov, iprov, FLOW_ALLOWED, NULL);
++	flow_between_entities(RL_LINK, dprov, iprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock(prov_lock(dprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	record_inode_name_from_dentry(new_dentry, iprov);
++	return 0;
++}
++
++/*
++ * Check for permission to rename a file or directory.
++ * @old_dir contains the inode structure for parent of the old link.
++ * @old_dentry contains the dentry structure of the old link.
++ * @new_dir contains the inode structure for parent of the new link.
++ * @new_dentry contains the dentry structure of the new link.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_rename(struct inode *old_dir,
++																		struct dentry *old_dentry,
++																		struct inode *new_dir,
++																		struct dentry *new_dentry)
++{
++	return provenance_inode_link(old_dentry, new_dir, new_dentry);
++}
++
++/*
++ * Check permission before setting file attributes.  Note that the kernel
++ * call to notify_change is performed from several locations, whenever
++ * file attributes change (such as when a file is truncated, chown/chmod
++ * operations, transferring disk quotas, etc).
++ * @dentry contains the dentry structure for the file.
++ * @attr is the iattr structure containing the new file attributes.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_setattr(struct dentry *dentry, struct iattr *iattr)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov;
++	struct provenance *iattrprov;
++	unsigned long irqflags;
++
++	iprov = dentry_provenance(dentry);
++	if (!iprov)
++		return -ENOMEM;
++	iattrprov = alloc_provenance(ENT_IATTR, GFP_KERNEL);
++
++	prov_msg(iattrprov)->iattr_info.valid = iattr->ia_valid;
++	prov_msg(iattrprov)->iattr_info.mode = iattr->ia_mode;
++	prov_msg(iattrprov)->iattr_info.uid = __kuid_val(iattr->ia_uid);
++	prov_msg(iattrprov)->iattr_info.gid = __kgid_val(iattr->ia_gid);
++	prov_msg(iattrprov)->iattr_info.size = iattr->ia_size;
++	prov_msg(iattrprov)->iattr_info.atime = iattr->ia_atime.tv_sec;
++	prov_msg(iattrprov)->iattr_info.mtime = iattr->ia_mtime.tv_sec;
++	prov_msg(iattrprov)->iattr_info.ctime = iattr->ia_ctime.tv_sec;
++
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_from_activity(RL_SETATTR, cprov, iattrprov, FLOW_ALLOWED, NULL);
++	flow_between_entities(RL_SETATTR, iattrprov, iprov, FLOW_ALLOWED, NULL);
++	queue_save_provenance(iprov, dentry);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	free_provenance(iattrprov);
++	return 0;
++}
++
++/*
++ * Check permission before obtaining file attributes.
++ * @path contains the path structure for the file.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_getattr(const struct path *path)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = dentry_provenance(path->dentry);
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_to_activity(RL_GETATTR, iprov, cprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check the permission to read the symbolic link.
++ * @dentry contains the dentry structure for the file link.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_readlink(struct dentry *dentry)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = dentry_provenance(dentry);
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_to_activity(RL_READLINK, iprov, cprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++static int provenance_inode_setxattr(struct dentry *dentry,
++																			const char *name,
++																			const void *value,
++																			size_t size,
++																			int flags)
++{
++	struct provenance *prov;
++	union prov_msg *setting;
++
++	if (strcmp(name, XATTR_NAME_PROVENANCE) == 0) { // provenance xattr
++		if (size != sizeof(union prov_msg))
++			return -ENOMEM;
++		prov = dentry_provenance(dentry);
++		setting = (union prov_msg *)value;
++
++		if (provenance_is_tracked(setting))
++			set_tracked(prov_msg(prov));
++		else
++			clear_tracked(prov_msg(prov));
++
++		if (provenance_is_opaque(setting))
++			set_opaque(prov_msg(prov));
++		else
++			clear_opaque(prov_msg(prov));
++
++		if (provenance_does_propagate(setting))
++			set_propagate(prov_msg(prov));
++		else
++			clear_propagate(prov_msg(prov));
++
++		prov_bloom_merge(prov_taint(prov_msg(prov)), prov_taint(setting));
++	}
++	return 0;
++}
++
++/*
++ * Update inode security field after successful setxattr operation.
++ * @value identified by @name for @dentry.
++ */
++static void provenance_inode_post_setxattr(struct dentry *dentry,
++																						const char *name,
++																						const void *value,
++																						size_t size,
++																						int flags)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = dentry_provenance(dentry);
++	unsigned long irqflags;
++
++	if (strcmp(name, XATTR_NAME_PROVENANCE) == 0)
++		return;
++
++	if (!iprov)
++		return;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	if (provenance_is_opaque(prov_msg(cprov)) || provenance_is_opaque(prov_msg(iprov)))
++		goto out;
++	if (!provenance_is_tracked(prov_msg(cprov)) && !provenance_is_tracked(prov_msg(iprov)))
++		goto out;
++	record_write_xattr(RL_SETXATTR, iprov, cprov, name, value, size, flags, FLOW_ALLOWED);
++out:
++	queue_save_provenance(iprov, dentry);;
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++}
++
++/*
++ * Check permission before obtaining the extended attributes
++ * identified by @name for @dentry.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_getxattr(struct dentry *dentry, const char *name)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = dentry_provenance(dentry);
++	int rtn = 0;
++	unsigned long irqflags;
++
++	if (strcmp(name, XATTR_NAME_PROVENANCE) == 0)
++		return 0;
++
++	if (!iprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	if (provenance_is_opaque(prov_msg(cprov)) || provenance_is_opaque(prov_msg(iprov)))
++		goto out;
++	if (!provenance_is_tracked(prov_msg(cprov)) && !provenance_is_tracked(prov_msg(iprov)))
++		goto out;
++	record_read_xattr(RL_GETXATTR, cprov, iprov, name, FLOW_ALLOWED);
++out:
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return rtn;
++}
++
++/*
++ * Check permission before obtaining the list of extended attribute
++ * names for @dentry.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_listxattr(struct dentry *dentry)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = dentry_provenance(dentry);
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_to_activity(RL_LSTXATTR, iprov, cprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before removing the extended attribute
++ * identified by @name for @dentry.
++ * Return 0 if permission is granted.
++ */
++static int provenance_inode_removexattr(struct dentry *dentry, const char *name)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = dentry_provenance(dentry);
++	unsigned long irqflags;
++
++	if (strcmp(name, XATTR_NAME_PROVENANCE) == 0)
++		return -EPERM;
++
++	if (!iprov)
++		return -ENOMEM;
++
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	if (provenance_is_opaque(prov_msg(cprov)) || provenance_is_opaque(prov_msg(iprov)))
++		goto out;
++	if (!provenance_is_tracked(prov_msg(cprov)) && !provenance_is_tracked(prov_msg(iprov)))
++		goto out;
++	record_write_xattr(RL_RMVXATTR, iprov, cprov, name, NULL, 0, 0, FLOW_ALLOWED);
++out:
++	queue_save_provenance(iprov, dentry);;
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++static int provenance_inode_getsecurity(struct inode *inode,
++																				const char *name,
++																				void **buffer,
++																				bool alloc)
++{
++	struct provenance *iprov = inode_provenance(inode, true);
++
++	if (unlikely(!iprov))
++		return -ENOMEM;
++	if (strcmp(name, XATTR_PROVENANCE_SUFFIX))
++		return -EOPNOTSUPP;
++	if (!alloc)
++		goto out;
++	*buffer = kmalloc(sizeof(union prov_msg), GFP_KERNEL);
++	memcpy(*buffer, prov_msg(iprov), sizeof(union prov_msg));
++out:
++	return sizeof(union prov_msg);
++}
++
++static int provenance_inode_listsecurity(struct inode *inode,
++																					char *buffer,
++																					size_t buffer_size)
++{
++	const int len = sizeof(XATTR_NAME_PROVENANCE);
++
++	if (buffer && len <= buffer_size)
++		memcpy(buffer, XATTR_NAME_PROVENANCE, len);
++	return len;
++}
++
++/*
++ * Check file permissions before accessing an open file.  This hook is
++ * called by various operations that read or write files.  A security
++ * module can use this hook to perform additional checking on these
++ * operations, e.g.  to revalidate permissions on use to support privilege
++ * bracketing or policy changes.  Notice that this hook is used when the
++ * actual read/write operations are performed, whereas the
++ * inode_security_ops hook is called when a file is opened (as well as
++ * many other operations).
++ * Caveat:  Although this hook can be used to revalidate permissions for
++ * various system call operations that read or write files, it does not
++ * address the revalidation of permissions for memory-mapped files.
++ * Security modules must handle this separately if they need such
++ * revalidation.
++ * @file contains the file structure being accessed.
++ * @mask contains the requested permissions.
++ * Return 0 if permission is granted.
++ */
++static int provenance_file_permission(struct file *file, int mask)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = file_provenance(file);
++	struct inode *inode = file_inode(file);
++	uint32_t perms;
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++	refresh_current_provenance();
++	refresh_inode_provenance(inode);
++	perms = file_mask_to_perms(inode->i_mode, mask);
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	if (is_inode_dir(inode)) {
++		if ((perms & (DIR__WRITE)) != 0)
++			flow_from_activity(RL_WRITE, cprov, iprov, FLOW_ALLOWED, file);
++		if ((perms & (DIR__READ)) != 0)
++			flow_to_activity(RL_READ, iprov, cprov, FLOW_ALLOWED, file);
++		if ((perms & (DIR__SEARCH)) != 0)
++			flow_to_activity(RL_SEARCH, iprov, cprov, FLOW_ALLOWED, file);
++	} else if (is_inode_socket(inode)) {
++		if ((perms & (FILE__WRITE | FILE__APPEND)) != 0)
++			flow_from_activity(RL_SND, cprov, iprov, FLOW_ALLOWED, file);
++		if ((perms & (FILE__READ)) != 0)
++			flow_to_activity(RL_RCV, iprov, cprov, FLOW_ALLOWED, file);
++	} else{
++		if ((perms & (FILE__WRITE | FILE__APPEND)) != 0)
++			flow_from_activity(RL_WRITE, cprov, iprov, FLOW_ALLOWED, file);
++		if ((perms & (FILE__READ)) != 0)
++			flow_to_activity(RL_READ, iprov, cprov, FLOW_ALLOWED, file);
++		if ((perms & (FILE__EXECUTE)) != 0) {
++			if (provenance_is_opaque(prov_msg(iprov)))
++				set_opaque(prov_msg(cprov));
++			else
++				flow_to_activity(RL_EXEC, iprov, cprov, FLOW_ALLOWED, file);
++		}
++	}
++	queue_save_provenance(iprov, file_dentry(file));
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Save open-time permission checking state for later use upon
++ * file_permission, and recheck access if anything has changed
++ * since inode_permission.
++ */
++static int provenance_file_open(struct file *file, const struct cred *cred)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = file_provenance(file);
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_to_activity(RL_OPEN, iprov, cprov, FLOW_ALLOWED, file);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permissions for a mmap operation.  The @file may be NULL, e.g.
++ * if mapping anonymous memory.
++ * @file contains the file structure for file to map (may be NULL).
++ * @reqprot contains the protection requested by the application.
++ * @prot contains the protection that will be applied by the kernel.
++ * @flags contains the operational flags.
++ * Return 0 if permission is granted.
++ */
++static int provenance_mmap_file(struct file *file,
++																unsigned long reqprot,
++																unsigned long prot,
++																unsigned long flags)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = NULL;
++	struct provenance *bprov = NULL;
++	unsigned long irqflags;
++
++	if (unlikely(!file))
++		return 0;
++	iprov = file_provenance(file);
++	if ((flags & MAP_TYPE) == MAP_SHARED) {
++		spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++		spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++		cprov->has_mmap = 1;
++		if ((prot & (PROT_WRITE)) != 0)
++			flow_from_activity(RL_MMAP_WRITE, cprov, iprov, FLOW_ALLOWED, file);
++		if ((prot & (PROT_READ)) != 0)
++			flow_to_activity(RL_MMAP_READ, iprov, cprov, FLOW_ALLOWED, file);
++		if ((prot & (PROT_EXEC)) != 0)
++			flow_to_activity(RL_MMAP_EXEC, iprov, cprov, FLOW_ALLOWED, file);
++		queue_save_provenance(iprov, file_dentry(file));
++		spin_unlock(prov_lock(iprov));
++		spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	} else{
++		bprov = branch_mmap(prov_msg(iprov), prov_msg(cprov));
++		if (!bprov)
++			return 0;
++		spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++		spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++		if ((prot & (PROT_WRITE)) != 0)
++			flow_from_activity(RL_MMAP_WRITE, cprov, bprov, FLOW_ALLOWED, file);
++		if ((prot & (PROT_READ)) != 0)
++			flow_to_activity(RL_MMAP_READ, bprov, cprov, FLOW_ALLOWED, file);
++		if ((prot & (PROT_EXEC)) != 0)
++			flow_to_activity(RL_MMAP_EXEC, bprov, cprov, FLOW_ALLOWED, file);
++		queue_save_provenance(iprov, file_dentry(file));
++		spin_unlock(prov_lock(iprov));
++		spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++		free_provenance(bprov);
++	}
++	return 0;
++}
++
++/*
++ * @file contains the file structure.
++ * @cmd contains the operation to perform.
++ * @arg contains the operational arguments.
++ * Check permission for an ioctl operation on @file.  Note that @arg
++ * sometimes represents a user space pointer; in other cases, it may be a
++ * simple integer value.  When @arg represents a user space pointer, it
++ * should never be used by the security module.
++ * Return 0 if permission is granted.
++ */
++static int provenance_file_ioctl(struct file *file,
++																	unsigned int cmd,
++																	unsigned long arg)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = file_provenance(file);
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_from_activity(RL_WRITE, cprov, iprov, FLOW_ALLOWED, NULL);
++	flow_to_activity(RL_READ, iprov, cprov, FLOW_ALLOWED, NULL);
++	queue_save_provenance(iprov, file_dentry(file));
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/* msg */
++
++/*
++ * Allocate and attach a security structure to the msg->security field.
++ * The security field is initialized to NULL when the structure is first
++ * created.
++ * @msg contains the message structure to be modified.
++ * Return 0 if operation was successful and permission is granted.
++ */
++static int provenance_msg_msg_alloc_security(struct msg_msg *msg)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *mprov;
++	unsigned long irqflags;
++
++	/* alloc new prov struct with generated id */
++	mprov = alloc_provenance(ENT_MSG, GFP_KERNEL);
++
++	if (!mprov)
++		return -ENOMEM;
++	prov_msg(mprov)->msg_msg_info.type = msg->m_type;
++	msg->provenance = mprov;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	flow_from_activity(RL_CREATE, cprov, mprov, FLOW_ALLOWED, NULL);
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Deallocate the security structure for this message.
++ * @msg contains the message structure to be modified.
++ */
++static void provenance_msg_msg_free_security(struct msg_msg *msg)
++{
++	free_provenance(msg->provenance);
++	msg->provenance = NULL;
++}
++
++/*
++ * Check permission before a message, @msg, is enqueued on the message
++ * queue, @msq.
++ * @msq contains the message queue to send message to.
++ * @msg contains the message to be enqueued.
++ * @msqflg contains operational flags.
++ * Return 0 if permission is granted.
++ */
++static int provenance_msg_queue_msgsnd(struct msg_queue *msq,
++																				struct msg_msg *msg,
++																				int msqflg)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *mprov = msg->provenance;
++	unsigned long irqflags;
++
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(mprov), PROVENANCE_LOCK_MSG);
++	flow_from_activity(RL_CREATE, cprov, mprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(mprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before a message, @msg, is removed from the message
++ * queue, @msq.  The @target task structure contains a pointer to the
++ * process that will be receiving the message (not equal to the current
++ * process when inline receives are being performed).
++ * @msq contains the message queue to retrieve message from.
++ * @msg contains the message destination.
++ * @target contains the task structure for recipient process.
++ * @type contains the type of message requested.
++ * @mode contains the operational flags.
++ * Return 0 if permission is granted.
++ */
++static int provenance_msg_queue_msgrcv(struct msg_queue *msq,
++																				struct msg_msg *msg,
++																				struct task_struct *target,
++																				long type,
++																				int mode)
++{
++	struct provenance *cprov = target->cred->provenance;
++	struct provenance *mprov = msg->provenance;
++	unsigned long irqflags;
++
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(mprov), PROVENANCE_LOCK_MSG);
++	flow_to_activity(RL_READ, mprov, cprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(mprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Allocate and attach a security structure to the shp->shm_perm.security
++ * field.  The security field is initialized to NULL when the structure is
++ * first created.
++ * @shp contains the shared memory structure to be modified.
++ * Return 0 if operation was successful and permission is granted.
++ */
++static int provenance_shm_alloc_security(struct shmid_kernel *shp)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *sprov = alloc_provenance(ENT_SHM, GFP_KERNEL);
++	unsigned long irqflags;
++
++	if (!sprov)
++		return -ENOMEM;
++	prov_msg(sprov)->shm_info.mode = shp->shm_perm.mode;
++	shp->shm_perm.provenance = sprov;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	flow_to_activity(RL_WRITE, sprov, cprov, FLOW_ALLOWED, NULL);
++	flow_from_activity(RL_READ, cprov, sprov, FLOW_ALLOWED, NULL);
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Deallocate the security struct for this memory segment.
++ * @shp contains the shared memory structure to be modified.
++ */
++static void provenance_shm_free_security(struct shmid_kernel *shp)
++{
++	free_provenance(shp->shm_perm.provenance);
++	shp->shm_perm.provenance = NULL;
++}
++
++/*
++ * Check permissions prior to allowing the shmat system call to attach the
++ * shared memory segment @shp to the data segment of the calling process.
++ * The attaching address is specified by @shmaddr.
++ * @shp contains the shared memory structure to be modified.
++ * @shmaddr contains the address to attach memory region to.
++ * @shmflg contains the operational flags.
++ * Return 0 if permission is granted.
++ */
++static int provenance_shm_shmat(struct shmid_kernel *shp,
++				char __user *shmaddr, int shmflg)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *sprov = shp->shm_perm.provenance;
++	unsigned long irqflags;
++
++	if (!sprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(sprov), PROVENANCE_LOCK_SHM);
++	if (shmflg & SHM_RDONLY)
++		flow_to_activity(RL_READ, sprov, cprov, FLOW_ALLOWED, NULL);
++	else {
++		flow_to_activity(RL_READ, sprov, cprov, FLOW_ALLOWED, NULL);
++		flow_from_activity(RL_WRITE, cprov, sprov, FLOW_ALLOWED, NULL);
++	}
++	spin_unlock(prov_lock(sprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Allocate and attach a security structure to the sk->sk_security field,
++ * which is used to copy security attributes between local stream sockets.
++ */
++static int provenance_sk_alloc_security(struct sock *sk,
++																				int family,
++																				gfp_t priority)
++{
++	struct provenance *skprov = current_provenance();
++
++	if (!skprov)
++		return -ENOMEM;
++	sk->sk_provenance = skprov;
++	return 0;
++}
++
++/*
++ * This hook allows a module to update or allocate a per-socket security
++ * structure. Note that the security field was not added directly to the
++ * socket structure, but rather, the socket security information is stored
++ * in the associated inode.  Typically, the inode alloc_security hook will
++ * allocate and and attach security information to
++ * sock->inode->i_security.  This hook may be used to update the
++ * sock->inode->i_security field with additional information that wasn't
++ * available when the inode was allocated.
++ * @sock contains the newly created socket structure.
++ * @family contains the requested protocol family.
++ * @type contains the requested communications type.
++ * @protocol contains the requested protocol.
++ * @kern set to 1 if a kernel socket.
++ */
++static int provenance_socket_post_create(struct socket *sock,
++																					int family,
++																					int type,
++																					int protocol,
++																					int kern)
++{
++	struct provenance *cprov  = current_provenance();
++	struct provenance *iprov = socket_inode_provenance(sock);
++	unsigned long irqflags;
++
++	if (kern)
++		return 0;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_from_activity(RL_CREATE, cprov, iprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before socket protocol layer bind operation is
++ * performed and the socket @sock is bound to the address specified in the
++ * @address parameter.
++ * @sock contains the socket structure.
++ * @address contains the address to bind to.
++ * @addrlen contains the length of address.
++ * Return 0 if permission is granted.
++ */
++static int provenance_socket_bind(struct socket *sock,
++																	struct sockaddr *address,
++																	int addrlen)
++{
++	struct provenance *cprov  = current_provenance();
++	struct provenance *iprov = socket_inode_provenance(sock);
++	struct sockaddr_in *ipv4_addr;
++	uint8_t op;
++
++	if (!iprov)
++		return -ENOMEM;
++
++	if (provenance_is_opaque(prov_msg(cprov)))
++		return 0;
++
++	/* should we start tracking this socket */
++	if (address->sa_family == AF_INET) {
++		ipv4_addr = (struct sockaddr_in *)address;
++		op = prov_ipv4_ingressOP(ipv4_addr->sin_addr.s_addr, ipv4_addr->sin_port);
++		if ((op & PROV_NET_TRACKED) != 0) {
++			set_tracked(prov_msg(iprov));
++			set_tracked(prov_msg(cprov));
++		}
++		if ((op & PROV_NET_PROPAGATE) != 0) {
++			set_propagate(prov_msg(iprov));
++			set_propagate(prov_msg(cprov));
++		}
++		if ((op & PROV_NET_RECORD) != 0)
++			set_record_packet(prov_msg(iprov));
++	}
++	provenance_record_address(address, addrlen, iprov);
++	flow_from_activity(RL_BIND, cprov, iprov, FLOW_ALLOWED, NULL);
++	return 0;
++}
++
++/*
++ * Check permission before socket protocol layer connect operation
++ * attempts to connect socket @sock to a remote address, @address.
++ * @sock contains the socket structure.
++ * @address contains the address of remote endpoint.
++ * @addrlen contains the length of address.
++ * Return 0 if permission is granted.
++ */
++static int provenance_socket_connect(struct socket *sock,
++																			struct sockaddr *address,
++																			int addrlen)
++{
++	struct provenance *cprov  = current_provenance();
++	struct provenance *iprov = socket_inode_provenance(sock);
++	struct sockaddr_in *ipv4_addr;
++	unsigned long irqflags;
++	uint8_t op;
++
++	if (!iprov)
++		return -ENOMEM;
++
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	if (provenance_is_opaque(prov_msg(cprov)))
++		goto out;
++
++	/* should we start tracking this socket */
++	if (address->sa_family == AF_INET) {
++		ipv4_addr = (struct sockaddr_in *)address;
++		op = prov_ipv4_egressOP(ipv4_addr->sin_addr.s_addr, ipv4_addr->sin_port);
++		if ((op & PROV_NET_TRACKED) != 0) {
++			set_tracked(prov_msg(iprov));
++			set_tracked(prov_msg(cprov));
++		}
++		if ((op & PROV_NET_PROPAGATE) != 0) {
++			set_propagate(prov_msg(iprov));
++			set_propagate(prov_msg(cprov));
++		}
++		if ((op & PROV_NET_RECORD) != 0)
++			set_record_packet(prov_msg(iprov));
++	}
++	provenance_record_address(address, addrlen, iprov);
++	flow_from_activity(RL_CONNECT, cprov, iprov, FLOW_ALLOWED, NULL);
++out:
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before socket protocol layer listen operation.
++ * @sock contains the socket structure.
++ * @backlog contains the maximum length for the pending connection queue.
++ * Return 0 if permission is granted.
++ */
++static int provenance_socket_listen(struct socket *sock, int backlog)
++{
++	struct provenance *cprov  = current_provenance();
++	struct provenance *iprov = socket_inode_provenance(sock);
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_from_activity(RL_LISTEN, cprov, iprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before accepting a new connection.  Note that the new
++ * socket, @newsock, has been created and some information copied to it,
++ * but the accept operation has not actually been performed.
++ * @sock contains the listening socket structure.
++ * @newsock contains the newly created server socket for connection.
++ * Return 0 if permission is granted.
++ */
++static int provenance_socket_accept(struct socket *sock, struct socket *newsock)
++{
++	struct provenance *cprov  = current_provenance();
++	struct provenance *iprov = socket_inode_provenance(sock);
++	struct provenance *niprov = socket_inode_provenance(newsock);
++	unsigned long irqflags;
++
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_between_entities(RL_CREATE, iprov, niprov, FLOW_ALLOWED, NULL);
++	flow_to_activity(RL_ACCEPT, niprov, cprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before transmitting a message to another socket.
++ * @sock contains the socket structure.
++ * @msg contains the message to be transmitted.
++ * @size contains the size of message.
++ * Return 0 if permission is granted.
++ */
++static int provenance_socket_sendmsg(struct socket *sock,
++																			struct msghdr *msg,
++																			int size)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = socket_inode_provenance(sock);
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_from_activity(RL_SND, cprov, iprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permission before receiving a message from a socket.
++ * @sock contains the socket structure.
++ * @msg contains the message structure.
++ * @size contains the size of message structure.
++ * @flags contains the operational flags.
++ * Return 0 if permission is granted.
++ */
++static int provenance_socket_recvmsg(struct socket *sock,
++																			struct msghdr *msg,
++																			int size,
++																			int flags)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = socket_inode_provenance(sock);
++	unsigned long irqflags;
++
++	if (!iprov)
++		return -ENOMEM;
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_to_activity(RL_RCV, iprov, cprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	return 0;
++}
++
++/*
++ * Check permissions on incoming network packets.  This hook is distinct
++ * from Netfilter's IP input hooks since it is the first time that the
++ * incoming sk_buff @skb has been associated with a particular socket, @sk.
++ * Must not sleep inside this hook because some callers hold spinlocks.
++ * @sk contains the sock (not socket) associated with the incoming sk_buff.
++ * @skb contains the incoming network data.
++ */
++static int provenance_socket_sock_rcv_skb(struct sock *sk, struct sk_buff *skb)
++{
++	struct provenance *cprov = sk_provenance(sk);
++	struct provenance *iprov;
++	union prov_msg pckprov;
++	uint16_t family = sk->sk_family;
++	unsigned long irqflags;
++
++	if (!cprov)
++		return 0;
++	if (family != PF_INET)
++		return 0;
++	iprov = sk_inode_provenance(sk);
++	if (!iprov)
++		return 0;
++	if (provenance_is_tracked(prov_msg(iprov)) ||
++			provenance_is_tracked(prov_msg(cprov))) {
++		provenance_parse_skb_ipv4(skb, &pckprov);
++		spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++		spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++		record_pck_to_inode(&pckprov, iprov);
++		if (provenance_is_tracked(prov_msg(cprov)))
++			flow_to_activity(RL_RCV, iprov, cprov, FLOW_ALLOWED, NULL);
++		if (provenance_records_packet(prov_msg(iprov)))
++			record_packet_content(&pckprov, skb);
++		spin_unlock(prov_lock(iprov));
++		spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	}
++	return 0;
++}
++
++/*
++ * Check permissions before establishing a Unix domain stream connection
++ * between @sock and @other.
++ * @sock contains the sock structure.
++ * @other contains the peer sock structure.
++ * @newsk contains the new sock structure.
++ * Return 0 if permission is granted.
++ */
++static int provenance_unix_stream_connect(struct sock *sock,
++					  struct sock *other,
++					  struct sock *newsk)
++{
++	/*struct provenance *cprov  = current_provenance();
++	   struct provenance *iprov = sk_inode_provenance(sock);
++	   struct provenance *oprov = sk_inode_provenance(other);
++	   struct provenance *nprov = sk_inode_provenance(newsk);
++	   unsigned long irqflags;
++	   spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	   spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	   flow_from_activity(RL_CONNECT, cprov, nprov, FLOW_ALLOWED, NULL);
++	   flow_from_activity(RL_CONNECT, iprov, nprov, FLOW_ALLOWED, NULL);
++	   flow_from_activity(RL_CONNECT, oprov, nprov, FLOW_ALLOWED, NULL);
++	   spin_unlock(prov_lock(iprov));
++	   spin_unlock_irqrestore(prov_lock(cprov), irqflags);*/
++	return 0;
++}
++
++/*
++ * Check permissions before connecting or sending datagrams from @sock to
++ * @other.
++ * @sock contains the socket structure.
++ * @other contains the peer socket structure.
++ * Return 0 if permission is granted.
++ */
++static int provenance_unix_may_send(struct socket *sock,
++				    struct socket *other)
++{
++	struct provenance *sprov = socket_inode_provenance(sock);
++	struct provenance *oprov = socket_inode_provenance(other);
++	unsigned long irqflags;
++
++	spin_lock_irqsave_nested(prov_lock(sprov), irqflags, PROVENANCE_LOCK_SOCKET);
++	spin_lock_nested(prov_lock(oprov), PROVENANCE_LOCK_SOCK);
++	flow_between_entities(RL_UNKNOWN, sprov, oprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(oprov));
++	spin_unlock_irqrestore(prov_lock(sprov), irqflags);
++	return 0;
++}
++
++/* outdated description */
++/*
++ * Save security information in the bprm->security field, typically based
++ * on information about the bprm->file, for later use by the apply_creds
++ * hook.  This hook may also optionally check permissions (e.g. for
++ * transitions between security domains).
++ * This hook may be called multiple times during a single execve, e.g. for
++ * interpreters.  The hook can tell whether it has already been called by
++ * checking to see if @bprm->security is non-NULL.if so, then the hook
++ * may decide either to retain the security information saved earlier or
++ * to replace it.
++ * @bprm contains the linux_binprm structure.
++ * Return 0 if the hook is successful and permission is granted.
++ */
++static int provenance_bprm_set_creds(struct linux_binprm *bprm)
++{
++	struct provenance *nprov = bprm->cred->provenance;
++	struct provenance *iprov = file_provenance(bprm->file);
++	unsigned long irqflags;
++
++	if (!nprov)
++		return -ENOMEM;
++
++	if (provenance_is_opaque(prov_msg(iprov))) {
++		set_opaque(prov_msg(nprov));
++		return 0;
++	}
++	spin_lock_irqsave_nested(prov_lock(iprov), irqflags, PROVENANCE_LOCK_INODE);
++	flow_to_activity(RL_EXEC, iprov, nprov, FLOW_ALLOWED, NULL);
++	spin_unlock_irqrestore(prov_lock(iprov), irqflags);
++	return 0;
++}
++
++/*
++ * Prepare to install the new security attributes of a process being
++ * transformed by an execve operation, based on the old credentials
++ * pointed to by @current->cred and the information set in @bprm->cred by
++ * the bprm_set_creds hook.  @bprm points to the linux_binprm structure.
++ * This hook is a good place to perform state changes on the process such
++ * as closing open file descriptors to which access will no longer be
++ * granted when the attributes are changed.  This is called immediately
++ * before commit_creds().
++ */
++static void provenance_bprm_committing_creds(struct linux_binprm *bprm)
++{
++	struct provenance *cprov  = current_provenance();
++	struct provenance *nprov = bprm->cred->provenance;
++	struct provenance *iprov = file_provenance(bprm->file);
++	unsigned long irqflags;
++
++	if (provenance_is_opaque(prov_msg(iprov))) {
++		set_opaque(prov_msg(nprov));
++		return;
++	}
++	record_node_name(cprov, bprm->interp);
++	spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++	spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++	flow_between_activities(RL_EXEC_PROCESS, cprov, nprov, FLOW_ALLOWED, NULL);
++	flow_to_activity(RL_EXEC, iprov, nprov, FLOW_ALLOWED, NULL);
++	spin_unlock(prov_lock(iprov));
++	spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++}
++
++/*
++ * Allocate and attach a security structure to the sb->s_security field.
++ * The s_security field is initialized to NULL when the structure is
++ * allocated.
++ * @sb contains the super_block structure to be modified.
++ * Return 0 if operation was successful.
++ */
++static int provenance_sb_alloc_security(struct super_block *sb)
++{
++	struct provenance *sbprov  = alloc_provenance(ENT_SBLCK, GFP_KERNEL);
++
++	if (!sbprov)
++		return -ENOMEM;
++	sb->s_provenance = sbprov;
++	return 0;
++}
++
++/*
++ * Deallocate and clear the sb->s_security field.
++ * @sb contains the super_block structure to be modified.
++ */
++static void provenance_sb_free_security(struct super_block *sb)
++{
++	free_provenance(sb->s_provenance);
++	sb->s_provenance = NULL;
++}
++
++static int provenance_sb_kern_mount(struct super_block *sb,
++																		int flags,
++																		void *data)
++{
++	int i;
++	uint8_t c = 0;
++	struct provenance *sbprov = sb->s_provenance;
++
++	for (i = 0; i < 16; i++) {
++		prov_msg(sbprov)->sb_info.uuid[i] = sb->s_uuid[i];
++		c |= sb->s_uuid[i];
++	}
++	if (c == 0) // no uuid defined, generate random one
++		get_random_bytes(prov_msg(sbprov)->sb_info.uuid, 16 * sizeof(uint8_t));
++	return 0;
++}
++
++static struct security_hook_list provenance_hooks[] __ro_after_init = {
++	/* task related hooks */
++	LSM_HOOK_INIT(cred_alloc_blank,	      provenance_cred_alloc_blank),
++	LSM_HOOK_INIT(cred_free,	      provenance_cred_free),
++	LSM_HOOK_INIT(cred_prepare,	      provenance_cred_prepare),
++	LSM_HOOK_INIT(cred_transfer,	      provenance_cred_transfer),
++	LSM_HOOK_INIT(task_fix_setuid,	      provenance_task_fix_setuid),
++
++	/* inode related hooks */
++	LSM_HOOK_INIT(inode_alloc_security,   provenance_inode_alloc_security),
++	LSM_HOOK_INIT(inode_create,	      provenance_inode_create),
++	LSM_HOOK_INIT(inode_free_security,    provenance_inode_free_security),
++	LSM_HOOK_INIT(inode_permission,	      provenance_inode_permission),
++	LSM_HOOK_INIT(inode_link,	      provenance_inode_link),
++	LSM_HOOK_INIT(inode_rename,	      provenance_inode_rename),
++	LSM_HOOK_INIT(inode_setattr,	      provenance_inode_setattr),
++	LSM_HOOK_INIT(inode_getattr,	      provenance_inode_getattr),
++	LSM_HOOK_INIT(inode_readlink,	      provenance_inode_readlink),
++	LSM_HOOK_INIT(inode_setxattr,	      provenance_inode_setxattr),
++	LSM_HOOK_INIT(inode_post_setxattr,    provenance_inode_post_setxattr),
++	LSM_HOOK_INIT(inode_getxattr,	      provenance_inode_getxattr),
++	LSM_HOOK_INIT(inode_listxattr,	      provenance_inode_listxattr),
++	LSM_HOOK_INIT(inode_removexattr,      provenance_inode_removexattr),
++	LSM_HOOK_INIT(inode_getsecurity,      provenance_inode_getsecurity),
++	LSM_HOOK_INIT(inode_listsecurity,     provenance_inode_listsecurity),
++
++	/* file related hooks */
++	LSM_HOOK_INIT(file_permission,	      provenance_file_permission),
++	LSM_HOOK_INIT(mmap_file,	      provenance_mmap_file),
++	LSM_HOOK_INIT(file_ioctl,	      provenance_file_ioctl),
++	LSM_HOOK_INIT(file_open,	      provenance_file_open),
++
++	/* msg related hooks */
++	LSM_HOOK_INIT(msg_msg_alloc_security, provenance_msg_msg_alloc_security),
++	LSM_HOOK_INIT(msg_msg_free_security,  provenance_msg_msg_free_security),
++	LSM_HOOK_INIT(msg_queue_msgsnd,	      provenance_msg_queue_msgsnd),
++	LSM_HOOK_INIT(msg_queue_msgrcv,	      provenance_msg_queue_msgrcv),
++
++	/* shared memory related hooks */
++	LSM_HOOK_INIT(shm_alloc_security,     provenance_shm_alloc_security),
++	LSM_HOOK_INIT(shm_free_security,      provenance_shm_free_security),
++	LSM_HOOK_INIT(shm_shmat,	      provenance_shm_shmat),
++
++	/* socket related hooks */
++	LSM_HOOK_INIT(sk_alloc_security,      provenance_sk_alloc_security),
++	LSM_HOOK_INIT(socket_post_create,     provenance_socket_post_create),
++	LSM_HOOK_INIT(socket_bind,	      provenance_socket_bind),
++	LSM_HOOK_INIT(socket_connect,	      provenance_socket_connect),
++	LSM_HOOK_INIT(socket_listen,	      provenance_socket_listen),
++	LSM_HOOK_INIT(socket_accept,	      provenance_socket_accept),
++	LSM_HOOK_INIT(socket_sendmsg,	      provenance_socket_sendmsg),
++	LSM_HOOK_INIT(socket_recvmsg,	      provenance_socket_recvmsg),
++	LSM_HOOK_INIT(socket_sock_rcv_skb,    provenance_socket_sock_rcv_skb),
++	LSM_HOOK_INIT(unix_stream_connect,    provenance_unix_stream_connect),
++	LSM_HOOK_INIT(unix_may_send,	      provenance_unix_may_send),
++
++	/* exec related hooks */
++	LSM_HOOK_INIT(bprm_set_creds,	      provenance_bprm_set_creds),
++	LSM_HOOK_INIT(bprm_committing_creds,  provenance_bprm_committing_creds),
++
++	/* file system related hooks */
++	LSM_HOOK_INIT(sb_alloc_security,      provenance_sb_alloc_security),
++	LSM_HOOK_INIT(sb_free_security,	      provenance_sb_free_security),
++	LSM_HOOK_INIT(sb_kern_mount,	      provenance_sb_kern_mount)
++};
++
++struct kmem_cache *provenance_cache;
++
++uint32_t prov_machine_id;
++uint32_t prov_boot_id;
++
++struct prov_boot_buffer         *boot_buffer;
++struct prov_long_boot_buffer    *long_boot_buffer;
++
++LIST_HEAD(ingress_ipv4filters);
++LIST_HEAD(egress_ipv4filters);
++LIST_HEAD(secctx_filters);
++LIST_HEAD(cgroup_filters);
++LIST_HEAD(provenance_query_hooks);
++bool prov_enabled;
++bool prov_all;
++
++void __init provenance_add_hooks(void)
++{
++	prov_enabled = true;
++#ifdef CONFIG_SECURITY_PROVENANCE_WHOLE_SYSTEM
++	prov_all = true;
++#else
++	prov_all = false;
++#endif
++	prov_machine_id = 1;
++	// proper counter instead of random id?
++	get_random_bytes(&prov_boot_id, sizeof(uint32_t));
++	provenance_cache = kmem_cache_create("provenance_struct",
++					     sizeof(struct provenance),
++					     0, SLAB_PANIC, NULL);
++	/* init relay buffers, to deal with provenance before FS is ready */
++	boot_buffer = kzalloc(sizeof(struct prov_boot_buffer), GFP_KERNEL);
++	if (unlikely(!boot_buffer))
++		panic("Provenance: could not allocate boot_buffer.");
++	long_boot_buffer = kzalloc(sizeof(struct prov_long_boot_buffer), GFP_KERNEL);
++	if (unlikely(!long_boot_buffer))
++		panic("Provenance: could not allocate long_boot_buffer.");
++	prov_queue = alloc_workqueue("prov_queue", 0, 0);
++	if (!prov_queue)
++		pr_err("Provenance: could not initialise work queue.");
++	relay_ready = false;
++	cred_init_provenance();
++	/* register the provenance security hooks */
++	security_add_hooks(provenance_hooks, ARRAY_SIZE(provenance_hooks));
++	pr_info("Provenance: Camflow %s\n", CAMFLOW_VERSION_STR);
++	pr_info("Provenance: hooks ready.\n");
++}
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/av_utils.h ./linux-4.10.5/security/provenance/include/av_utils.h
+--- ./pristine/linux-4.10.5/security/provenance/include/av_utils.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/av_utils.h	2017-03-23 15:17:52.437221787 +0000
+@@ -0,0 +1,50 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++
++#ifndef _AV_UTILS_PROVENANCE_H
++#define _AV_UTILS_PROVENANCE_H
++
++#define FILE__EXECUTE   0x00000001UL
++#define FILE__READ      0x00000002UL
++#define FILE__APPEND    0x00000004UL
++#define FILE__WRITE     0x00000008UL
++#define DIR__SEARCH     0x00000010UL
++#define DIR__WRITE      0x00000020UL
++#define DIR__READ       0x00000040UL
++
++static inline uint32_t file_mask_to_perms(int mode, unsigned int mask)
++{
++	uint32_t av = 0;
++
++	if (!S_ISDIR(mode)) {
++		if (mask & MAY_EXEC)
++			av |= FILE__EXECUTE;
++		if (mask & MAY_READ)
++			av |= FILE__READ;
++		if (mask & MAY_APPEND)
++			av |= FILE__APPEND;
++		else if (mask & MAY_WRITE)
++			av |= FILE__WRITE;
++	} else {
++		if (mask & MAY_EXEC)
++			av |= DIR__SEARCH;
++		if (mask & MAY_WRITE)
++			av |= DIR__WRITE;
++		if (mask & MAY_READ)
++			av |= DIR__READ;
++	}
++
++	return av;
++}
++
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_cgroup.h ./linux-4.10.5/security/provenance/include/provenance_cgroup.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_cgroup.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_cgroup.h	2017-03-23 15:17:52.437221787 +0000
+@@ -0,0 +1,68 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2017 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef CONFIG_SECURITY_PROVENANCE_CGROUP
++#define CONFIG_SECURITY_PROVENANCE_CGROUP
++
++struct cgroup_filters {
++	struct list_head list;
++	struct cgroupinfo filter;
++};
++
++extern struct list_head cgroup_filters;
++
++static inline uint8_t prov_cgroup_whichOP(uint32_t cid)
++{
++	struct list_head *listentry, *listtmp;
++	struct cgroup_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, &cgroup_filters) {
++		tmp = list_entry(listentry, struct cgroup_filters, list);
++		if (tmp->filter.cid == cid)
++			return tmp->filter.op;
++	}
++	return 0; // do nothing
++}
++
++static inline uint8_t prov_cgroup_delete(struct cgroup_filters *f)
++{
++	struct list_head *listentry, *listtmp;
++	struct cgroup_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, &cgroup_filters) {
++		tmp = list_entry(listentry, struct cgroup_filters, list);
++		if (tmp->filter.cid == f->filter.cid) {
++			list_del(listentry);
++			kfree(tmp);
++			return 0; // you should only get one
++		}
++	}
++	return 0; // do nothing
++}
++
++static inline uint8_t prov_cgroup_add_or_update(struct cgroup_filters *f)
++{
++	struct list_head *listentry, *listtmp;
++	struct cgroup_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, &cgroup_filters) {
++		tmp = list_entry(listentry, struct cgroup_filters, list);
++		if (tmp->filter.cid == f->filter.cid) {
++			tmp->filter.op = f->filter.op;
++			return 0; // you should only get one
++		}
++	}
++	list_add_tail(&(f->list), &cgroup_filters); // not already on the list, we add it
++	return 0;
++}
++
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_filter.h ./linux-4.10.5/security/provenance/include/provenance_filter.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_filter.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_filter.h	2017-03-23 15:17:52.438221800 +0000
+@@ -0,0 +1,125 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef _LINUX_PROVENANCE_FILTER_H
++#define _LINUX_PROVENANCE_FILTER_H
++
++#include <uapi/linux/provenance.h>
++#include <provenance_cgroup.h>
++#include <provenance_secctx.h>
++
++extern bool prov_enabled;
++extern bool prov_all;
++
++#define HIT_FILTER(filter, data) ((filter & data) != 0)
++
++extern uint64_t prov_node_filter;
++extern uint64_t prov_propagate_node_filter;
++
++#define filter_node(node) __filter_node(prov_node_filter, node)
++#define filter_propagate_node(node) __filter_node(prov_propagate_node_filter, node)
++
++/* return either or not the node should be filtered out */
++static inline bool __filter_node(uint64_t filter, const union prov_msg *node)
++{
++	if (!prov_enabled)
++		return true;
++	if (provenance_is_opaque(node))
++		return true;
++	// we hit an element of the black list ignore
++	if (HIT_FILTER(filter, node_identifier(node).type))
++		return true;
++	return false;
++}
++
++#define UPDATE_FILTER (SUBTYPE(RL_VERSION_PROCESS) | SUBTYPE(RL_VERSION) | SUBTYPE(RL_NAMED))
++static inline bool filter_update_node(uint64_t relation_type)
++{
++	if (HIT_FILTER(relation_type, UPDATE_FILTER)) // not update if relation is of above type
++		return true;
++	return false;
++}
++
++extern uint64_t prov_relation_filter;
++extern uint64_t prov_propagate_relation_filter;
++
++/* return either or not the relation should be filtered out */
++static inline bool filter_relation(uint64_t type)
++{
++	// we hit an element of the black list ignore
++	if (HIT_FILTER(prov_relation_filter, type))
++		return true;
++	return false;
++}
++
++/* return either or not tracking should propagate */
++static inline bool filter_propagate_relation(uint64_t type)
++{
++	// the relation does not allow tracking propagation
++	if (HIT_FILTER(prov_propagate_relation_filter, type))
++		return true;
++	return false;
++}
++
++static inline bool should_record_relation(uint64_t type, union prov_msg *from, union prov_msg *to)
++{
++	// one of the node should not appear in the record, ignore the relation
++	if (filter_node(from) || filter_node(to))
++		return false;
++	return true;
++}
++
++static inline bool prov_has_secid(union prov_msg *prov)
++{
++	switch (prov_type(prov)) {
++	case ENT_INODE_UNKNOWN:
++	case ENT_INODE_LINK:
++	case ENT_INODE_FILE:
++	case ENT_INODE_DIRECTORY:
++	case ENT_INODE_CHAR:
++	case ENT_INODE_BLOCK:
++	case ENT_INODE_FIFO:
++	case ENT_INODE_SOCKET:
++	case ENT_INODE_MMAP:
++		return true;
++	default: return false;
++	}
++}
++
++static inline void apply_target(union prov_msg *prov)
++{
++	uint8_t op;
++
++	// track based on cgroup
++	if (prov_type(prov) == ACT_TASK) {
++		op = prov_cgroup_whichOP(prov->task_info.cid);
++		if (unlikely(op != 0)) {
++			pr_info("Provenance: apply cgroup filter %u.", op);
++			if ((op & PROV_CGROUP_TRACKED) != 0)
++				set_tracked(prov);
++			if ((op & PROV_CGROUP_PROPAGATE) != 0)
++				set_propagate(prov);
++		}
++	}
++	if (prov_has_secid(prov)) {
++		op = prov_secctx_whichOP(node_secid(prov));
++		if (unlikely(op != 0)) {
++			pr_info("Provenance: apply secctx filter %u.", op);
++			if ((op & PROV_SEC_TRACKED) != 0)
++				set_tracked(prov);
++			if ((op & PROV_SEC_PROPAGATE) != 0)
++				set_propagate(prov);
++		}
++	}
++}
++
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance.h ./linux-4.10.5/security/provenance/include/provenance.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance.h	2017-03-23 15:17:52.437221787 +0000
+@@ -0,0 +1,218 @@
++/*
++ *
++ * Author: Thomas Pasquier <thomas.pasquier@cl.cam.ac.uk>
++ *
++ * Copyright (C) 2015 University of Cambridge
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef _LINUX_PROVENANCE_H
++#define _LINUX_PROVENANCE_H
++
++#ifdef CONFIG_SECURITY_PROVENANCE
++
++#include <linux/slab.h>
++#include <linux/types.h>
++#include <linux/bug.h>
++#include <linux/socket.h>
++#include <uapi/linux/mman.h>
++#include <uapi/linux/camflow.h>
++#include <uapi/linux/provenance.h>
++#include <uapi/linux/stat.h>
++#include <linux/fs.h>
++#include <linux/mm.h>
++#include <linux/xattr.h>
++
++#include "provenance_filter.h"
++#include "provenance_relay.h"
++#include "provenance_query.h"
++
++#define prov_next_relation_id() ((uint64_t)atomic64_inc_return(&prov_relation_id))
++#define prov_next_node_id() ((uint64_t)atomic64_inc_return(&prov_node_id))
++
++extern atomic64_t prov_relation_id;
++extern atomic64_t prov_node_id;
++extern struct kmem_cache *provenance_cache;
++
++enum {
++	PROVENANCE_LOCK_TASK,
++	PROVENANCE_LOCK_DIR,
++	PROVENANCE_LOCK_INODE,
++	PROVENANCE_LOCK_MSG,
++	PROVENANCE_LOCK_SHM,
++	PROVENANCE_LOCK_SOCKET,
++	PROVENANCE_LOCK_SOCK
++};
++
++struct provenance {
++	union prov_msg msg;
++	spinlock_t lock;
++	uint8_t updt_mmap;
++	uint8_t has_mmap;
++	bool has_outgoing;
++	bool initialised;
++	bool saved;
++};
++
++#define prov_msg(provenance) (&(provenance->msg))
++#define prov_lock(provenance) (&(provenance->lock))
++
++#define ASSIGN_NODE_ID 0
++extern uint32_t prov_machine_id;
++extern uint32_t prov_boot_id;
++
++static inline struct provenance *alloc_provenance(uint64_t ntype, gfp_t gfp)
++{
++	struct provenance *prov =  kmem_cache_zalloc(provenance_cache, gfp);
++
++	if (!prov)
++		return NULL;
++	spin_lock_init(prov_lock(prov));
++	prov_type(prov_msg(prov)) = ntype;
++	node_identifier(prov_msg(prov)).id = prov_next_node_id();
++	node_identifier(prov_msg(prov)).boot_id = prov_boot_id;
++	node_identifier(prov_msg(prov)).machine_id = prov_machine_id;
++	return prov;
++}
++
++static inline void free_provenance(struct provenance *prov)
++{
++	kmem_cache_free(provenance_cache, prov);
++}
++
++static inline void copy_node_info(union prov_identifier *dest, union prov_identifier *src)
++{
++	memcpy(dest, src, sizeof(union prov_identifier));
++}
++
++static inline void __record_node(union prov_msg *node)
++{
++	if (filter_node(node) || provenance_is_recorded(node)) // filtered or already recorded
++		return;
++
++	set_recorded(node);
++	if (unlikely(node_identifier(node).machine_id != prov_machine_id))
++		node_identifier(node).machine_id = prov_machine_id;
++	prov_write(node);
++}
++
++static inline void __prepare_relation(uint64_t type,
++				      union prov_identifier *from,
++				      union prov_identifier *to,
++				      union prov_msg *relation,
++				      struct file *file)
++{
++	prov_type(relation) = type;
++	relation_identifier(relation).id = prov_next_relation_id();
++	relation_identifier(relation).boot_id = prov_boot_id;
++	relation_identifier(relation).machine_id = prov_machine_id;
++	copy_node_info(&relation->relation_info.snd, from);
++	copy_node_info(&relation->relation_info.rcv, to);
++	if (file != NULL) {
++		relation->relation_info.set = FILE_INFO_SET;
++		relation->relation_info.offset = file->f_pos;
++	}
++}
++
++static inline int __update_version(uint64_t type, struct provenance *prov)
++{
++	union prov_msg old_prov;
++	union prov_msg relation;
++	int rc = 0;
++
++	if (!prov->has_outgoing) // there is no outgoing
++		return 0;
++	if (filter_update_node(type))
++		return 0;
++
++	memset(&relation, 0, sizeof(union prov_msg));
++	memcpy(&old_prov, prov_msg(prov), sizeof(union prov_msg));
++	memset(prov_taint(prov_msg(prov)), 0, PROV_N_BYTES);
++	node_identifier(prov_msg(prov)).version++;
++	clear_recorded(prov_msg(prov));
++	if (node_identifier(prov_msg(prov)).type == ACT_TASK)
++		__prepare_relation(RL_VERSION_PROCESS, &(old_prov.msg_info.identifier), &(prov_msg(prov)->msg_info.identifier), &relation, NULL);
++	else
++		__prepare_relation(RL_VERSION, &(old_prov.msg_info.identifier), &(prov_msg(prov)->msg_info.identifier), &relation, NULL);
++	rc = call_query_hooks(&old_prov, prov_msg(prov), &relation);
++	prov_write(&relation);
++	prov->has_outgoing = false; // we update there is no more outgoing edge
++	prov->saved = false;
++	return rc;
++}
++
++static inline int record_relation(uint64_t type,
++				  struct provenance *from,
++				  struct provenance *to,
++				  uint8_t allowed,
++				  struct file *file)
++{
++	union prov_msg relation;
++	int rc = 0;
++
++	// check if the nodes match some capture options
++	apply_target(prov_msg(from));
++	apply_target(prov_msg(to));
++
++	if (!provenance_is_tracked(prov_msg(from)) && !provenance_is_tracked(prov_msg(to)) && !prov_all)
++		return 0;
++	if (!should_record_relation(type, prov_msg(from), prov_msg(to)))
++		return 0;
++	memset(&relation, 0, sizeof(union prov_msg));
++	__record_node(prov_msg(from));
++	__record_node(prov_msg(to));
++	rc = __update_version(type, to);
++	if (rc < 0)
++		return rc;
++	__record_node(prov_msg(to));
++	__prepare_relation(type, &(prov_msg(from)->msg_info.identifier), &(prov_msg(to)->msg_info.identifier), &relation, file);
++	rc = call_query_hooks(prov_msg(from), prov_msg(to), &relation);
++	prov_write(&relation);
++	from->has_outgoing = true; // there is an outgoing edge
++	return rc;
++}
++
++static inline void flow_to_activity(uint64_t type,
++				    struct provenance *from,
++				    struct provenance *to,
++				    uint8_t allowed,
++				    struct file *file)
++{
++	record_relation(type, from, to, allowed, file);
++	if (should_record_relation(type, prov_msg(from), prov_msg(to)))
++		to->updt_mmap = 1;
++}
++
++static inline void flow_from_activity(uint64_t type,
++				      struct provenance *from,
++				      struct provenance *to,
++				      uint8_t allowed,
++				      struct file *file)
++{
++	record_relation(type, from, to, allowed, file);
++}
++
++static inline void flow_between_entities(uint64_t type,
++					 struct provenance *from,
++					 struct provenance *to,
++					 uint8_t allowed,
++					 struct file *file)
++{
++	record_relation(type, from, to, allowed, file);
++}
++
++static inline void flow_between_activities(uint64_t type,
++					   struct provenance *from,
++					   struct provenance *to,
++					   uint8_t allowed,
++					   struct file *file)
++{
++	record_relation(type, from, to, allowed, file);
++}
++
++#endif
++#endif /* _LINUX_PROVENANCE_H */
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_inode.h ./linux-4.10.5/security/provenance/include/provenance_inode.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_inode.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_inode.h	2017-03-23 15:17:52.442221850 +0000
+@@ -0,0 +1,213 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef CONFIG_SECURITY_PROVENANCE_INODE
++#define CONFIG_SECURITY_PROVENANCE_INODE
++#include <linux/file.h>
++#include <linux/fs.h>
++#include <linux/namei.h>
++#include <linux/xattr.h>
++
++#include "provenance_long.h"    // for record_inode_name
++#include "provenance_secctx.h"  // for record_inode_name
++
++#define is_inode_dir(inode) S_ISDIR(inode->i_mode)
++#define is_inode_socket(inode) S_ISSOCK(inode->i_mode)
++#define is_inode_file(inode) S_ISREG(inode->i_mode)
++
++static inline void update_inode_type(uint16_t mode, struct provenance *prov)
++{
++	uint64_t type = ENT_INODE_UNKNOWN;
++	unsigned long irqflags;
++
++	if (S_ISBLK(mode))
++		type = ENT_INODE_BLOCK;
++	else if (S_ISCHR(mode))
++		type = ENT_INODE_CHAR;
++	else if (S_ISDIR(mode))
++		type = ENT_INODE_DIRECTORY;
++	else if (S_ISFIFO(mode))
++		type = ENT_INODE_FIFO;
++	else if (S_ISLNK(mode))
++		type = ENT_INODE_LINK;
++	else if (S_ISREG(mode))
++		type = ENT_INODE_FILE;
++	else if (S_ISSOCK(mode))
++		type = ENT_INODE_SOCKET;
++	spin_lock_irqsave_nested(prov_lock(prov), irqflags, PROVENANCE_LOCK_INODE);
++	prov_msg(prov)->inode_info.mode = mode;
++	prov_type(prov_msg(prov)) = type;
++	spin_unlock_irqrestore(prov_lock(prov), irqflags);
++}
++
++static inline void provenance_mark_as_opaque(const char *name)
++{
++	struct path path;
++	struct provenance *prov;
++
++	if (kern_path(name, LOOKUP_FOLLOW, &path)) {
++		pr_err("Provenance: Failed file look up (%s).", name);
++		return;
++	}
++	prov = path.dentry->d_inode->i_provenance;
++	if (prov)
++		set_opaque(prov_msg(prov));
++}
++
++static inline void refresh_inode_provenance(struct inode *inode)
++{
++	struct provenance *prov = inode->i_provenance;
++
++	// will not be recorded
++	if (provenance_is_opaque(prov_msg(prov)))
++		return;
++	record_inode_name(inode, prov);
++	prov_msg(prov)->inode_info.ino = inode->i_ino;
++	prov_msg(prov)->inode_info.uid = __kuid_val(inode->i_uid);
++	prov_msg(prov)->inode_info.gid = __kgid_val(inode->i_gid);
++	security_inode_getsecid(inode, &(prov_msg(prov)->inode_info.secid));
++}
++
++static inline struct provenance *branch_mmap(union prov_msg *iprov, union prov_msg *cprov)
++{
++	//used for private MMAP
++	struct provenance *prov;
++	union prov_msg relation;
++
++	if (unlikely(!iprov || !cprov)) // should not occur
++		return NULL;
++	if (!provenance_is_tracked(iprov) && !provenance_is_tracked(cprov) && !prov_all)
++		return NULL;
++	if (!should_record_relation(RL_MMAP, cprov, iprov))
++		return NULL;
++	prov = alloc_provenance(ENT_INODE_MMAP, GFP_KERNEL);
++
++	prov_msg(prov)->inode_info.uid = iprov->inode_info.uid;
++	prov_msg(prov)->inode_info.gid = iprov->inode_info.gid;
++	memcpy(prov_msg(prov)->inode_info.sb_uuid, iprov->inode_info.sb_uuid, 16 * sizeof(uint8_t));
++	prov_msg(prov)->inode_info.mode = iprov->inode_info.mode;
++	__record_node(iprov);
++	memset(&relation, 0, sizeof(union prov_msg));
++	__record_node(prov_msg(prov));
++	__prepare_relation(RL_MMAP, &(iprov->msg_info.identifier), &(prov_msg(prov)->msg_info.identifier), &relation, NULL);
++	prov_write(&relation);
++	return prov;
++}
++
++// TODO check the locking in there, it is probably wrong...
++static inline int inode_init_provenance(struct inode *inode, struct dentry *opt_dentry)
++{
++	struct provenance *prov = inode->i_provenance;
++	union prov_msg *buf;
++	struct dentry *dentry;
++	int rc = 0;
++
++	if (prov->initialised)
++		return 0;
++	spin_lock_nested(prov_lock(prov), PROVENANCE_LOCK_INODE);
++	if (prov->initialised) {
++		spin_unlock(prov_lock(prov));
++		goto out;
++	}       else
++		prov->initialised = true;
++	spin_unlock(prov_lock(prov));
++	update_inode_type(inode->i_mode, prov);
++	if (!(inode->i_opflags & IOP_XATTR)) // xattr not supported on this inode
++		goto out;
++	if (opt_dentry)
++		dentry = dget(opt_dentry);
++	else
++		dentry = d_find_alias(inode);
++	if (!dentry)
++		goto out;
++	buf = kmalloc(sizeof(union prov_msg), GFP_NOFS);
++	if (!buf) {
++		rc = -ENOMEM;
++		prov->initialised = false;
++		dput(dentry);
++		goto out;
++	}
++	rc = __vfs_getxattr(dentry, inode, XATTR_NAME_PROVENANCE, buf, sizeof(union prov_msg));
++	dput(dentry);
++	if (rc < 0) {
++		if (rc != -ENODATA && rc != -EOPNOTSUPP) {
++			prov->initialised = false;
++			goto free_buf;
++		} else {
++			rc = 0;
++			goto free_buf;
++		}
++	}
++	memcpy(prov_msg(prov), buf, sizeof(union prov_msg));
++	rc = 0;
++free_buf:
++	kfree(buf);
++out:
++	return rc;
++}
++
++static inline struct provenance *inode_provenance(struct inode *inode, bool may_sleep)
++{
++	struct provenance *prov = inode->i_provenance;
++
++	might_sleep_if(may_sleep);
++	if (!prov->initialised && may_sleep)
++		inode_init_provenance(inode, NULL);
++	return prov;
++}
++
++static inline struct provenance *dentry_provenance(struct dentry *dentry)
++{
++	struct inode *inode = d_backing_inode(dentry);
++	struct provenance *prov;
++
++	if (!inode)
++		return NULL;
++	prov = inode->i_provenance;
++	inode_init_provenance(inode, dentry);
++	return prov;
++}
++
++static inline struct provenance *file_provenance(struct file *file)
++{
++	struct inode *inode = file_inode(file);
++
++	if (!inode)
++		return NULL;
++	return inode_provenance(inode, true);
++}
++
++static inline void save_provenance(struct dentry *dentry)
++{
++	struct inode *inode;
++	struct provenance *prov;
++	union prov_msg buf;
++
++	if (!dentry)
++		return;
++	inode = d_backing_inode(dentry);
++	if (!inode)
++		return;
++	prov = inode->i_provenance;
++	spin_lock(prov_lock(prov));
++	if (!prov->initialised || prov->saved) { // not initialised or already saved
++		spin_unlock(prov_lock(prov));
++		return;
++	}
++	memcpy(&buf, prov_msg(prov), sizeof(union prov_msg));
++	prov->saved = true;
++	spin_unlock(prov_lock(prov));
++	clear_recorded(&buf);
++	clear_name_recorded(&buf);
++	__vfs_setxattr_noperm(dentry, XATTR_NAME_PROVENANCE, &buf, sizeof(union prov_msg), 0);
++}
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_long.h ./linux-4.10.5/security/provenance/include/provenance_long.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_long.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_long.h	2017-03-23 15:17:52.442221850 +0000
+@@ -0,0 +1,273 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef _LINUX_PROVENANCE_LONG_H
++#define _LINUX_PROVENANCE_LONG_H
++
++#include <linux/file.h>
++#include <uapi/linux/provenance.h>
++
++#include "provenance_net.h"
++
++extern uint32_t prov_machine_id;
++extern uint32_t prov_boot_id;
++
++static union long_prov_msg *alloc_long_provenance(uint64_t ntype)
++{
++	union long_prov_msg *tmp = kzalloc(sizeof(union long_prov_msg), GFP_ATOMIC);
++
++	if (!tmp)
++		return NULL;
++
++	prov_type(tmp) = ntype;
++	node_identifier(tmp).id = prov_next_node_id();
++	node_identifier(tmp).boot_id = prov_boot_id;
++	node_identifier(tmp).machine_id = prov_machine_id;
++	return tmp;
++}
++
++static inline void __long_record_node(union long_prov_msg *node)
++{
++	if (provenance_is_recorded(node))
++		return;
++	set_recorded(node);
++	long_prov_write(node);
++}
++
++static inline void __long_record_relation(uint64_t type, union long_prov_msg *from, union prov_msg *to, uint8_t allowed)
++{
++	union prov_msg relation;
++
++	if (unlikely(!prov_enabled)) // capture is not enabled, ignore
++		return;
++	// don't record if to or from are opaque
++	if (unlikely(provenance_is_opaque(to)))
++		return;
++	__long_record_node(from);
++	__record_node(to);
++	memset(&relation, 0, sizeof(union prov_msg));
++	__prepare_relation(type, &(from->msg_info.identifier), &(to->msg_info.identifier), &relation, NULL);
++	prov_write(&relation);
++}
++
++static inline void record_node_name(struct provenance *node, const char *name)
++{
++	union long_prov_msg *fname_prov;
++
++	if (provenance_is_name_recorded(prov_msg(node)) || !provenance_is_recorded(prov_msg(node)))
++		return;
++	fname_prov = alloc_long_provenance(ENT_FILE_NAME);
++	if (!fname_prov) {
++		pr_err("Provenance: recod name failed to allocate memory\n");
++		return;
++	}
++	strlcpy(fname_prov->file_name_info.name, name, PATH_MAX);
++	fname_prov->file_name_info.length = strnlen(fname_prov->file_name_info.name, PATH_MAX);
++	if (prov_type(prov_msg(node)) == ACT_TASK) {
++		spin_lock_nested(prov_lock(node), PROVENANCE_LOCK_TASK);
++		__long_record_relation(RL_NAMED_PROCESS, fname_prov, prov_msg(node), FLOW_ALLOWED);
++		set_name_recorded(prov_msg(node));
++		spin_unlock(prov_lock(node));
++	} else{
++		spin_lock_nested(prov_lock(node), PROVENANCE_LOCK_INODE);
++		__long_record_relation(RL_NAMED, fname_prov, prov_msg(node), FLOW_ALLOWED);
++		set_name_recorded(prov_msg(node));
++		spin_unlock(prov_lock(node));
++	}
++	kfree(fname_prov);
++}
++
++static inline void record_inode_name_from_dentry(struct dentry *dentry, struct provenance *prov)
++{
++	char *buffer;
++	char *ptr;
++
++	if (provenance_is_name_recorded(prov_msg(prov)) || !provenance_is_recorded(prov_msg(prov)))
++		return;
++	// should not sleep
++	buffer = kcalloc(PATH_MAX, sizeof(char), GFP_ATOMIC);
++	if (!buffer) {
++		pr_err("Provenance: could not allocate memory\n");
++		return;
++	}
++	ptr = dentry_path_raw(dentry, buffer, PATH_MAX);
++	record_node_name(prov, ptr);
++	kfree(buffer);
++}
++
++static inline void record_inode_name(struct inode *inode, struct provenance *prov)
++{
++	struct dentry *dentry;
++
++	if (provenance_is_name_recorded(prov_msg(prov)) || !provenance_is_recorded(prov_msg(prov)))
++		return;
++	dentry = d_find_alias(inode);
++	if (!dentry) // we did not find a dentry, not sure if it should ever happen
++		return;
++	record_inode_name_from_dentry(dentry, prov);
++	dput(dentry);
++}
++
++static inline void record_task_name(struct task_struct *task, struct provenance *prov)
++{
++	const struct cred *cred;
++	struct provenance *fprov;
++	struct mm_struct *mm;
++	struct file *exe_file;
++	char *buffer;
++	char *ptr;
++
++	if (provenance_is_name_recorded(prov_msg(prov)) || !provenance_is_recorded(prov_msg(prov)))
++		return;
++	cred = get_task_cred(task);
++	if (!cred)
++		return;
++	mm = get_task_mm(task);
++	if (!mm)
++		goto out;
++	exe_file = get_mm_exe_file(mm);
++	mmput_async(mm);
++	if (exe_file) {
++		fprov = file_inode(exe_file)->i_provenance;
++		if (provenance_is_opaque(prov_msg(fprov))) {
++			set_opaque(prov_msg(prov));
++			goto out;
++		}
++		// should not sleep
++		buffer = kcalloc(PATH_MAX, sizeof(char), GFP_ATOMIC);
++		if (!buffer) {
++			pr_err("Provenance: could not allocate memory\n");
++			fput(exe_file);
++			goto out;
++		}
++		ptr = file_path(exe_file, buffer, PATH_MAX);
++		fput(exe_file);
++		record_node_name(prov, ptr);
++		kfree(buffer);
++	}
++out:
++	put_cred(cred);
++}
++
++static inline void provenance_record_address(struct sockaddr *address, int addrlen, struct provenance *prov)
++{
++	union long_prov_msg *addr_info;
++
++	if (provenance_is_name_recorded(prov_msg(prov)) || !provenance_is_recorded(prov_msg(prov)))
++		return;
++	addr_info = alloc_long_provenance(ENT_ADDR);
++	if (!addr_info)
++		return;
++	addr_info->address_info.length = addrlen;
++	memcpy(&(addr_info->address_info.addr), address, addrlen);
++	__long_record_relation(RL_NAMED, addr_info, prov_msg(prov), FLOW_ALLOWED);
++	kfree(addr_info);
++	set_name_recorded(prov_msg(prov));
++}
++
++static inline int record_write_xattr(uint64_t type,
++				     struct provenance *iprov,
++				     struct provenance *cprov,
++				     const char *name,
++				     const void *value,
++				     size_t size,
++				     int flags,
++				     uint8_t allowed)
++{
++	union long_prov_msg *xattr = alloc_long_provenance(ENT_XATTR);
++	union prov_msg relation;
++	int rc = 0;
++
++	if (!xattr)
++		return 0;
++	memset(&relation, 0, sizeof(union prov_msg));
++	memcpy(xattr->xattr_info.name, name, PROV_XATTR_NAME_SIZE - 1);
++	xattr->xattr_info.name[PROV_XATTR_NAME_SIZE - 1] = '\0';
++	if (value != NULL) {
++		if (size < PROV_XATTR_VALUE_SIZE) {
++			xattr->xattr_info.size = size;
++			memcpy(xattr->xattr_info.value, value, size);
++		} else{
++			xattr->xattr_info.size = PROV_XATTR_VALUE_SIZE;
++			memcpy(xattr->xattr_info.value, value, PROV_XATTR_VALUE_SIZE);
++		}
++		xattr->xattr_info.flags = flags;
++	}
++	__record_node(prov_msg(cprov));
++	__prepare_relation(type, &(prov_msg(cprov)->msg_info.identifier), &(xattr->msg_info.identifier), &relation, NULL);
++	prov_write(&relation);
++	rc = __update_version(type, iprov);
++	if (rc < 0)
++		return rc;
++	__long_record_relation(type, xattr, prov_msg(iprov), allowed);
++	kfree(xattr);
++	cprov->has_outgoing = true;
++	return rc;
++}
++
++static inline int record_read_xattr(uint64_t type,
++				    struct provenance *cprov,
++				    struct provenance *iprov,
++				    const char *name,
++				    uint8_t allowed)
++{
++	union long_prov_msg *xattr = alloc_long_provenance(ENT_XATTR);
++	union prov_msg relation;
++	int rc = 0;
++
++	if (!xattr)
++		return 0;
++	memset(&relation, 0, sizeof(union prov_msg));
++	memcpy(xattr->xattr_info.name, name, PROV_XATTR_NAME_SIZE - 1);
++	xattr->xattr_info.name[PROV_XATTR_NAME_SIZE - 1] = '\0';
++	__record_node(prov_msg(iprov));
++	__prepare_relation(type, &(prov_msg(iprov)->msg_info.identifier), &(xattr->msg_info.identifier), &relation, NULL);
++	prov_write(&relation);
++	rc = __update_version(type, cprov);
++	if (rc < 0)
++		return rc;
++	__long_record_relation(type, xattr, prov_msg(cprov), allowed);
++	kfree(xattr);
++	iprov->has_outgoing = true;
++	return rc;
++}
++
++static inline void record_packet_content(union prov_msg *pck, const struct sk_buff *skb)
++{
++	union long_prov_msg *cnt = alloc_long_provenance(ENT_PCKCNT);
++
++	cnt->pckcnt_info.length = skb_end_offset(skb);
++	if (cnt->pckcnt_info.length > PATH_MAX) {
++		cnt->pckcnt_info.truncated = PROV_TRUNCATED;
++		memcpy(cnt->pckcnt_info.content, skb->head, PATH_MAX);
++	} else
++		memcpy(cnt->pckcnt_info.content, skb->head, cnt->pckcnt_info.length);
++	__long_record_node(cnt);
++	__long_record_relation(RL_READ, cnt, pck, FLOW_ALLOWED);
++}
++
++static inline int record_log(union prov_msg *cprov, const char __user *buf, size_t count)
++{
++	union long_prov_msg *str;
++
++	str = alloc_long_provenance(ENT_STR);
++	if (!str)
++		return -ENOMEM;
++	if (copy_from_user(str->str_info.str, buf, count))
++		return -EAGAIN;
++	str->str_info.str[count] = '\0'; // make sure the string is null terminated
++	str->str_info.length = count;
++	__long_record_relation(RL_SAID, str, cprov, FLOW_ALLOWED);
++	kfree(str);
++	return count;
++}
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_net.h ./linux-4.10.5/security/provenance/include/provenance_net.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_net.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_net.h	2017-03-23 15:17:52.442221850 +0000
+@@ -0,0 +1,238 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef CONFIG_SECURITY_PROVENANCE_NET
++#define CONFIG_SECURITY_PROVENANCE_NET
++
++#include <net/sock.h>
++#include <net/ip.h>
++#include <linux/netfilter_ipv4.h>
++#include <linux/netfilter_ipv6.h>
++#include <linux/ip.h>
++#include <linux/tcp.h>
++#include <linux/udp.h>
++#include <linux/skbuff.h>
++
++#include "provenance.h"
++
++static inline struct provenance *socket_inode_provenance(struct socket *sock)
++{
++	struct provenance *iprov = SOCK_INODE(sock)->i_provenance;
++
++	return iprov;
++}
++
++static inline struct provenance *sk_inode_provenance(struct sock *sk)
++{
++	struct socket *sock = sk->sk_socket;
++
++	if (!sock)
++		return NULL;
++	return socket_inode_provenance(sock);
++}
++
++static inline struct provenance *sk_provenance(struct sock *sk)
++{
++	struct provenance *prov = sk->sk_provenance;
++
++	return prov;
++}
++
++#define ihlen(ih) (ih->ihl * 4)
++
++static inline void __extract_tcp_info(struct sk_buff *skb,
++				      struct iphdr *ih,
++				      int offset,
++				      struct packet_identifier *id)
++{
++	struct tcphdr _tcph;
++	struct tcphdr *th;
++	int tcpoff;
++
++	if (ntohs(ih->frag_off) & IP_OFFSET)
++		return;
++	tcpoff = offset + ihlen(ih); //point to tcp packet
++	th = skb_header_pointer(skb, tcpoff, sizeof(_tcph), &_tcph);
++	if (!th)
++		return;
++	id->snd_port = th->source;
++	id->rcv_port = th->dest;
++	id->seq = th->seq;
++}
++
++static inline void __extract_udp_info(struct sk_buff *skb,
++				      struct iphdr *ih,
++				      int offset,
++				      struct packet_identifier *id)
++{
++	struct udphdr _udph;
++	struct udphdr   *uh;
++	int udpoff;
++
++	if (ntohs(ih->frag_off) & IP_OFFSET)
++		return;
++	udpoff = offset + ihlen(ih); //point to udp packet
++	uh = skb_header_pointer(skb, udpoff, sizeof(_udph), &_udph);
++	if (!uh)
++		return;
++	id->snd_port = uh->source;
++	id->rcv_port = uh->dest;
++}
++
++static inline unsigned int provenance_parse_skb_ipv4(struct sk_buff *skb, union prov_msg *prov)
++{
++	struct packet_identifier *id;
++	int offset;
++	struct iphdr _iph;
++	struct iphdr *ih;
++
++	offset = skb_network_offset(skb);
++	ih = skb_header_pointer(skb, offset, sizeof(_iph), &_iph); // we obtain the ip header
++	if (!ih)
++		return -EINVAL;
++
++	if (ihlen(ih) < sizeof(_iph))
++		return -EINVAL;
++
++	memset(prov, 0, sizeof(union prov_msg));
++	id = &packet_identifier(prov); // we are going fo fill this
++
++	id->type = ENT_PACKET;
++	// collect IP element of prov identifier
++	id->id = ih->id;
++	id->snd_ip = ih->saddr;
++	id->rcv_ip = ih->daddr;
++	id->protocol = ih->protocol;
++	prov->pck_info.length = ih->tot_len;
++
++	// now we collect
++	switch (ih->protocol) {
++	case IPPROTO_TCP:
++		__extract_tcp_info(skb, ih, offset, id);
++		break;
++	case IPPROTO_UDP:
++		__extract_udp_info(skb, ih, offset, id);
++		break;
++	default:
++		break;
++	}
++	return 0;
++}
++
++struct ipv4_filters {
++	struct list_head list;
++	struct prov_ipv4_filter filter;
++};
++
++extern struct list_head ingress_ipv4filters;
++extern struct list_head egress_ipv4filters;
++
++#define prov_ipv4_ingressOP(ip, port) prov_ipv4_whichOP(&ingress_ipv4filters, ip, port)
++#define prov_ipv4_egressOP(ip, port) prov_ipv4_whichOP(&egress_ipv4filters, ip, port)
++
++static inline uint8_t prov_ipv4_whichOP(struct list_head *filters, uint32_t ip, uint32_t port)
++{
++	struct list_head *listentry, *listtmp;
++	struct ipv4_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, filters) {
++		tmp = list_entry(listentry, struct ipv4_filters, list);
++		if ((tmp->filter.mask & ip) == (tmp->filter.mask & tmp->filter.ip))     // ip match filter
++			if (tmp->filter.port == 0 || tmp->filter.port == port)          // any port or match
++				return tmp->filter.op;
++	}
++	return 0; // do nothing
++}
++
++static inline uint8_t prov_ipv4_delete(struct list_head *filters, struct ipv4_filters *f)
++{
++	struct list_head *listentry, *listtmp;
++	struct ipv4_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, filters) {
++		tmp = list_entry(listentry, struct ipv4_filters, list);
++		if (tmp->filter.mask == f->filter.mask &&
++		    tmp->filter.ip == f->filter.ip &&
++		    tmp->filter.port == f->filter.port) {
++			list_del(listentry);
++			kfree(tmp);
++			return 0; // you should only get one
++		}
++	}
++	return 0; // do nothing
++}
++
++static inline uint8_t prov_ipv4_add_or_update(struct list_head *filters, struct ipv4_filters *f)
++{
++	struct list_head *listentry, *listtmp;
++	struct ipv4_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, filters) {
++		tmp = list_entry(listentry, struct ipv4_filters, list);
++		if (tmp->filter.mask == f->filter.mask &&
++		    tmp->filter.ip == f->filter.ip &&
++		    tmp->filter.port == f->filter.port) {
++			tmp->filter.op |= f->filter.op;
++			return 0; // you should only get one
++		}
++	}
++	list_add_tail(&(f->list), filters); // not already on the list, we add it
++	return 0;
++}
++
++// incoming packet
++static inline int record_pck_to_inode(union prov_msg *pck, struct provenance *inode)
++{
++	union prov_msg relation;
++	int rc = 0;
++
++	if (unlikely(!pck || !inode)) // should not occur
++		return 0;
++	if (!provenance_is_tracked(prov_msg(inode)) && !prov_all)
++		return 0;
++	if (!should_record_relation(RL_RCV_PACKET, pck, prov_msg(inode)))
++		return 0;
++	memset(&relation, 0, sizeof(union prov_msg));
++	prov_write(pck);
++	__record_node(prov_msg(inode));
++	rc = __update_version(RL_RCV_PACKET, inode);
++	if (rc < 0)
++		return rc;
++	__record_node(prov_msg(inode));
++	__prepare_relation(RL_RCV_PACKET, &(pck->msg_info.identifier), &(prov_msg(inode)->msg_info.identifier), &relation, NULL);
++	rc = call_query_hooks(pck, prov_msg(inode), &relation);
++	prov_write(&relation);
++	return rc;
++}
++
++// outgoing packet
++static inline int record_inode_to_pck(struct provenance *inode, union prov_msg *pck)
++{
++	union prov_msg relation;
++	int rc = 0;
++
++	if (unlikely(!pck || !inode)) // should not occur
++		return 0;
++	if (!provenance_is_tracked(prov_msg(inode)) && !prov_all)
++		return 0;
++	if (!should_record_relation(RL_SND_PACKET, prov_msg(inode), pck))
++		return 0;
++	memset(&relation, 0, sizeof(union prov_msg));
++	__record_node(prov_msg(inode));
++	prov_write(pck);
++	__prepare_relation(RL_SND_PACKET, &(prov_msg(inode)->msg_info.identifier), &(pck->msg_info.identifier), &relation, NULL);
++	rc = call_query_hooks(prov_msg(inode), pck, &relation);
++	inode->has_outgoing = true;
++	prov_write(&relation);
++	return rc;
++}
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_query.h ./linux-4.10.5/security/provenance/include/provenance_query.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_query.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_query.h	2017-03-23 15:17:52.444221874 +0000
+@@ -0,0 +1,72 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@g.harvard.edu>
++ *
++ * Copyright (C) 2017 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++ #ifndef CONFIG_SECURITY_PROVENANCE_QUERY_H
++ #define CONFIG_SECURITY_PROVENANCE_QUERY_H
++ #include <linux/camflow_query.h>
++
++static inline int call_camflow_out_edge(union prov_msg *node,
++					union prov_msg *edge)
++{
++	int rc = 0;
++	struct list_head *listentry, *listtmp;
++	struct provenance_query_hooks *fcn;
++
++	list_for_each_safe(listentry, listtmp, &provenance_query_hooks) {
++		fcn = list_entry(listentry, struct provenance_query_hooks, list);
++		if (fcn->out_edge)
++			rc |= fcn->out_edge(node, edge);
++	}
++	return rc;
++}
++
++static inline int call_camflow_in_edge(union prov_msg *edge,
++				       union prov_msg *node)
++{
++	int rc = 0;
++	struct list_head *listentry, *listtmp;
++	struct provenance_query_hooks *fcn;
++
++	list_for_each_safe(listentry, listtmp, &provenance_query_hooks) {
++		fcn = list_entry(listentry, struct provenance_query_hooks, list);
++		if (fcn->in_edge)
++			rc |= fcn->in_edge(edge, node);
++	}
++	return rc;
++}
++
++static inline int call_query_hooks(union prov_msg *from,
++				   union prov_msg *to,
++				   union prov_msg *edge)
++{
++	int rc = 0;
++
++	rc = call_camflow_out_edge(from, edge);
++	if ((rc & CAMFLOW_RAISE_WARNING) == CAMFLOW_RAISE_WARNING)
++		pr_warning("Provenance: warning raised.\n");
++	if ((rc & CAMFLOW_PREVENT_FLOW) == CAMFLOW_PREVENT_FLOW) {
++		pr_err("Provenance: error raised.\n");
++		edge->relation_info.allowed = FLOW_DISALLOWED;
++		return -EPERM;
++	}
++	rc = call_camflow_in_edge(edge, to);
++	if ((rc & CAMFLOW_RAISE_WARNING) == CAMFLOW_RAISE_WARNING)
++		pr_warning("Provenance: warning raised.\n");
++	if ((rc & CAMFLOW_PREVENT_FLOW) == CAMFLOW_PREVENT_FLOW) {
++		pr_err("Provenance: error raised.\n");
++		edge->relation_info.allowed = FLOW_DISALLOWED;
++		return -EPERM;
++	}
++	return 0;
++}
++
++ #endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_relay.h ./linux-4.10.5/security/provenance/include/provenance_relay.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_relay.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_relay.h	2017-03-23 15:17:52.443221862 +0000
+@@ -0,0 +1,79 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef CONFIG_SECURITY_PROVENANCE_RELAY_H
++#define CONFIG_SECURITY_PROVENANCE_RELAY_H
++
++#include <linux/relay.h>
++#include <linux/spinlock.h>
++#include <linux/jiffies.h>
++
++#include "provenance_filter.h"
++
++#define PROV_RELAY_BUFF_EXP         22 // 4MB
++#define PROV_RELAY_BUFF_SIZE        ((1 << PROV_RELAY_BUFF_EXP) * sizeof(uint8_t))
++#define PROV_NB_SUBBUF              32
++#define PROV_INITIAL_BUFF_SIZE      (1024 * 4)
++#define PROV_INITIAL_LONG_BUFF_SIZE 256
++
++extern bool relay_ready;
++
++struct prov_boot_buffer {
++	union prov_msg buffer[PROV_INITIAL_BUFF_SIZE];
++	uint32_t nb_entry;
++};
++
++struct prov_long_boot_buffer {
++	union long_prov_msg buffer[PROV_INITIAL_LONG_BUFF_SIZE];
++	uint32_t nb_entry;
++};
++
++extern struct prov_boot_buffer *boot_buffer;
++extern struct rchan *prov_chan;
++
++static inline void prov_write(union prov_msg *msg)
++{
++	prov_jiffies(msg) = get_jiffies_64();
++	if (unlikely(!relay_ready)) {
++		if (likely(boot_buffer->nb_entry < PROV_INITIAL_BUFF_SIZE)) {
++			memcpy(&(boot_buffer->buffer[boot_buffer->nb_entry]), msg, sizeof(union prov_msg));
++			boot_buffer->nb_entry++;
++		} else
++			pr_err("Provenance: boot buffer is full.\n");
++	} else
++		relay_write(prov_chan, msg, sizeof(union prov_msg));
++}
++
++
++extern struct prov_long_boot_buffer *long_boot_buffer;
++extern struct rchan *long_prov_chan;
++
++static inline void long_prov_write(union long_prov_msg *msg)
++{
++	prov_jiffies(msg) = get_jiffies_64();
++	if (unlikely(!relay_ready)) {
++		if (likely(long_boot_buffer->nb_entry < PROV_INITIAL_LONG_BUFF_SIZE))
++			memcpy(&(long_boot_buffer->buffer[long_boot_buffer->nb_entry++]), msg, sizeof(union long_prov_msg));
++		else
++			pr_err("Provenance: long boot buffer is full.\n");
++	} else
++		relay_write(long_prov_chan, msg, sizeof(union long_prov_msg));
++}
++
++/* force sub-buffer switch */
++static inline void prov_flush(void)
++{
++	relay_flush(prov_chan);
++	relay_flush(long_prov_chan);
++}
++
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_secctx.h ./linux-4.10.5/security/provenance/include/provenance_secctx.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_secctx.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_secctx.h	2017-03-23 15:17:52.443221862 +0000
+@@ -0,0 +1,68 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef CONFIG_SECURITY_PROVENANCE_SECCTX
++#define CONFIG_SECURITY_PROVENANCE_SECCTX
++
++struct secctx_filters {
++	struct list_head list;
++	struct secinfo filter;
++};
++
++extern struct list_head secctx_filters;
++
++static inline uint8_t prov_secctx_whichOP(uint32_t secid)
++{
++	struct list_head *listentry, *listtmp;
++	struct secctx_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, &secctx_filters) {
++		tmp = list_entry(listentry, struct secctx_filters, list);
++		if (tmp->filter.secid == secid)
++			return tmp->filter.op;
++	}
++	return 0; // do nothing
++}
++
++static inline uint8_t prov_secctx_delete(struct secctx_filters  *f)
++{
++	struct list_head *listentry, *listtmp;
++	struct secctx_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, &secctx_filters) {
++		tmp = list_entry(listentry, struct secctx_filters, list);
++		if (tmp->filter.secid == f->filter.secid) {
++			list_del(listentry);
++			kfree(tmp);
++			return 0; // you should only get one
++		}
++	}
++	return 0; // do nothing
++}
++
++static inline uint8_t prov_secctx_add_or_update(struct secctx_filters *f)
++{
++	struct list_head *listentry, *listtmp;
++	struct secctx_filters *tmp;
++
++	list_for_each_safe(listentry, listtmp, &secctx_filters) {
++		tmp = list_entry(listentry, struct secctx_filters, list);
++		if (tmp->filter.secid == f->filter.secid) {
++			tmp->filter.op = f->filter.op;
++			return 0; // you should only get one
++		}
++	}
++	list_add_tail(&(f->list), &secctx_filters); // not already on the list, we add it
++	return 0;
++}
++
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/include/provenance_task.h ./linux-4.10.5/security/provenance/include/provenance_task.h
+--- ./pristine/linux-4.10.5/security/provenance/include/provenance_task.h	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/include/provenance_task.h	2017-03-23 15:17:52.444221874 +0000
+@@ -0,0 +1,123 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#ifndef CONFIG_SECURITY_PROVENANCE_TASK
++#define CONFIG_SECURITY_PROVENANCE_TASK
++
++#include <linux/cred.h>
++#include <linux/binfmts.h>
++#include <linux/sched.h>
++
++#include "provenance_long.h"
++#include "provenance_secctx.h"
++#include "provenance_cgroup.h"
++#include "provenance_inode.h"
++
++#define current_pid() (current->pid)
++static inline uint32_t current_cid(void)
++{
++	uint32_t cid = 0;
++	struct cgroup_namespace *cns;
++
++	task_lock(current);
++	if (current->nsproxy != NULL) {
++		cns = current->nsproxy->cgroup_ns;
++		if (cns != NULL) {
++			get_cgroup_ns(cns);
++			cid = cns->ns.inum;
++			put_cgroup_ns(cns);
++		}
++	}
++	task_unlock(current);
++	return cid;
++}
++
++#define vm_write(flags)   ((flags & VM_WRITE) == VM_WRITE)
++#define vm_read(flags)    ((flags & VM_READ) == VM_READ)
++#define vm_exec(flags)    ((flags & VM_EXEC) == VM_EXEC)
++#define vm_mayshare(flags) ((flags & (VM_SHARED | VM_MAYSHARE)) != 0)
++#define vm_write_mayshare(flags) (vm_write(flags) && vm_mayshare(flags))
++#define vm_read_exec_mayshare(flags) ((vm_write(flags) || vm_exec(flags)) && vm_mayshare(flags))
++
++
++static inline void current_update_shst(struct provenance *cprov)
++{
++	struct mm_struct *mm = get_task_mm(current);
++	struct vm_area_struct *vma;
++	struct file *mmapf;
++	vm_flags_t flags;
++	struct provenance *mmprov;
++
++	if (!mm)
++		return;
++	cprov->has_mmap = 0;
++	vma = mm->mmap;
++	while (vma) { // we go through mmaped files
++		mmapf = vma->vm_file;
++		if (mmapf) {
++			flags = vma->vm_flags;
++			mmprov = file_inode(mmapf)->i_provenance;
++			if (mmprov) {
++				cprov->has_mmap = 1;
++				spin_lock_nested(prov_lock(mmprov), PROVENANCE_LOCK_INODE);
++				if (vm_read_exec_mayshare(flags))
++					record_relation(RL_SH_READ, mmprov, cprov, FLOW_ALLOWED, NULL);
++				if (vm_write_mayshare(flags))
++					record_relation(RL_SH_WRITE, cprov, mmprov, FLOW_ALLOWED, NULL);
++				spin_unlock(prov_lock(mmprov));
++			}
++		}
++		vma = vma->vm_next;
++	}
++	mmput_async(mm);
++}
++
++
++static inline void refresh_current_provenance(void)
++{
++	struct provenance *prov = current_provenance();
++	uint32_t cid;
++	unsigned long irqflags;
++
++	// will not be recorded
++	if (provenance_is_opaque(prov_msg(prov)))
++		return;
++	cid = current_cid();
++	record_task_name(current, prov);
++	spin_lock_irqsave_nested(prov_lock(prov), irqflags, PROVENANCE_LOCK_TASK);
++	if (unlikely(prov_msg(prov)->task_info.pid == 0))
++		prov_msg(prov)->task_info.pid = task_pid_nr(current);
++	if (unlikely(prov_msg(prov)->task_info.vpid == 0))
++		prov_msg(prov)->task_info.vpid = task_pid_vnr(current);
++	prov_msg(prov)->task_info.cid = cid;
++	security_task_getsecid(current, &(prov_msg(prov)->task_info.secid));
++	if (prov->updt_mmap && prov->has_mmap) {
++		current_update_shst(prov);
++		prov->updt_mmap = 0;
++	}
++	spin_unlock_irqrestore(prov_lock(prov), irqflags);
++}
++
++static inline struct provenance *prov_from_vpid(pid_t pid)
++{
++	struct provenance *tprov;
++	struct task_struct *dest = find_task_by_vpid(pid);
++
++	if (!dest)
++		return NULL;
++
++	tprov = __task_cred(dest)->provenance;
++	if (!tprov)
++		return NULL;
++	return tprov;
++}
++#endif
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/Kconfig ./linux-4.10.5/security/provenance/Kconfig
+--- ./pristine/linux-4.10.5/security/provenance/Kconfig	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/Kconfig	2017-03-23 15:17:52.411221463 +0000
+@@ -0,0 +1,19 @@
++config SECURITY_PROVENANCE
++         bool "CamFlow - Provenance"
++         depends on SECURITY
++         select RELAY
++         select SECURITYFS
++         select NETFILTER
++         default y
++         help
++          This selects CamFlow provenance modules. It captures provenance through
++          a Linux Security Module.
++
++config SECURITY_PROVENANCE_WHOLE_SYSTEM
++	bool "CamFlow - Whole system provenance"
++	depends on SECURITY_PROVENANCE
++	default n
++	help
++	  This option activate whole system provenance capture from boot.
++
++	  If you are unsure how to answer this question, answer N.
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/Makefile ./linux-4.10.5/security/provenance/Makefile
+--- ./pristine/linux-4.10.5/security/provenance/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/Makefile	2017-03-23 15:17:52.411221463 +0000
+@@ -0,0 +1,8 @@
++#
++# Makefile for Provenance LSM
++#
++obj-$(CONFIG_SECURITY_PROVENANCE) := provenance.o
++
++provenance-y := relay.o hooks.o query.o fs.o netfilter.o propagate.o
++
++ccflags-y := -I$(srctree)/security/provenance/include
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/netfilter.c ./linux-4.10.5/security/provenance/netfilter.c
+--- ./pristine/linux-4.10.5/security/provenance/netfilter.c	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/netfilter.c	2017-03-23 15:17:52.444221874 +0000
+@@ -0,0 +1,70 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@seas.harvard.edu>
++ *
++ * Copyright (C) 2016 Havard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#include "provenance.h"
++#include "provenance_net.h"
++#include "provenance_task.h"
++
++static inline unsigned int __ipv4_out(struct sk_buff *skb)
++{
++	struct provenance *cprov = current_provenance();
++	struct provenance *iprov = NULL;
++	union prov_msg pckprov;
++	unsigned long irqflags;
++
++	if (!cprov)
++		return NF_ACCEPT;
++
++	if (provenance_is_tracked(prov_msg(cprov))) {
++		iprov = sk_inode_provenance(skb->sk);
++		if (!iprov)
++			return NF_ACCEPT;
++		provenance_parse_skb_ipv4(skb, &pckprov);
++		spin_lock_irqsave_nested(prov_lock(cprov), irqflags, PROVENANCE_LOCK_TASK);
++		spin_lock_nested(prov_lock(iprov), PROVENANCE_LOCK_INODE);
++		record_inode_to_pck(iprov, &pckprov);
++		if (provenance_records_packet(prov_msg(iprov)))
++			record_packet_content(&pckprov, skb);
++		spin_unlock(prov_lock(iprov));
++		spin_unlock_irqrestore(prov_lock(cprov), irqflags);
++	}
++	return NF_ACCEPT;
++}
++
++static unsigned int provenance_ipv4_out(void *priv,
++					struct sk_buff *skb,
++					const struct nf_hook_state *state)
++{
++	return __ipv4_out(skb);
++}
++
++static struct nf_hook_ops provenance_nf_ops[] = {
++	{
++		.hook = provenance_ipv4_out,
++		.pf = NFPROTO_IPV4,
++		.hooknum = NF_INET_LOCAL_OUT,
++		.priority = NF_IP_PRI_LAST,
++	},
++};
++
++// will initialise the hooks
++static int __init provenance_nf_init(void)
++{
++	int err;
++
++	err = nf_register_hooks(provenance_nf_ops, ARRAY_SIZE(provenance_nf_ops));
++	if (err)
++		panic("Provenance: nf_register_hooks: error %d\n", err);
++	pr_info("Provenance: netfilter ready.\n");
++	return 0;
++}
++module_init(provenance_nf_init);
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/propagate.c ./linux-4.10.5/security/provenance/propagate.c
+--- ./pristine/linux-4.10.5/security/provenance/propagate.c	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/propagate.c	2017-03-23 15:17:52.445221887 +0000
+@@ -0,0 +1,50 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@g.harvard.edu>
++ *
++ * Copyright (C) 2017 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#include "provenance.h"
++
++static int out_edge(union prov_msg *node, union prov_msg *edge)
++{
++	if (provenance_does_propagate(node) && provenance_is_tracked(node)) {
++		// can propagate over edge?
++		if (!filter_propagate_relation(prov_type(edge))) {
++			set_tracked(edge);
++			set_propagate(edge);
++		}
++	}
++	return 0;
++}
++
++static int in_edge(union prov_msg *edge, union prov_msg *node)
++{
++	if (provenance_does_propagate(edge) && provenance_is_tracked(edge)) {
++		// can propagate to node?
++		if (!filter_propagate_node(node)) {
++			set_tracked(node);
++			set_propagate(node);
++		}
++	}
++	return 0;
++}
++
++struct provenance_query_hooks hooks = {
++	QUERY_HOOK_INIT(out_edge, out_edge),
++	QUERY_HOOK_INIT(in_edge,  in_edge),
++};
++
++static int __init init_prov_propagate(void)
++{
++	register_camflow_query_hook(&hooks);
++	pr_info("Provenance: propagate ready.\n");
++	return 0;
++}
++core_initcall(init_prov_propagate);
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/query.c ./linux-4.10.5/security/provenance/query.c
+--- ./pristine/linux-4.10.5/security/provenance/query.c	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/query.c	2017-03-23 15:17:52.445221887 +0000
+@@ -0,0 +1,31 @@
++/*
++ *
++ * Author: Thomas Pasquier <tfjmp@g.harvard.edu>
++ *
++ * Copyright (C) 2017 Harvard University
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++ #include <linux/rculist.h>
++ #include "provenance_query.h"
++
++int register_camflow_query_hook(struct provenance_query_hooks *hook)
++{
++	if (!hook)
++		return -ENOMEM;
++	pr_info("Provenance: registering policy hook...\n");
++	list_add_tail_rcu(&(hook->list), &provenance_query_hooks);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(register_camflow_query_hook);
++
++int unregister_camflow_query_hook(struct provenance_query_hooks *hook)
++{
++	list_del_rcu(&(hook->list));
++	return 0;
++}
++EXPORT_SYMBOL_GPL(unregister_camflow_query_hook);
+diff -uprN -b -B ./pristine/linux-4.10.5/security/provenance/relay.c ./linux-4.10.5/security/provenance/relay.c
+--- ./pristine/linux-4.10.5/security/provenance/relay.c	1970-01-01 01:00:00.000000000 +0100
++++ ./linux-4.10.5/security/provenance/relay.c	2017-03-23 15:17:52.445221887 +0000
+@@ -0,0 +1,90 @@
++/*
++ *
++ * Author: Thomas Pasquier <thomas.pasquier@cl.cam.ac.uk>
++ *
++ * Copyright (C) 2015 University of Cambridge
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ *
++ */
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/debugfs.h>
++
++#include "provenance.h"
++
++#define PROV_BASE_NAME "provenance"
++#define LONG_PROV_BASE_NAME "long_provenance"
++
++/* global variable, extern in provenance.h */
++struct rchan *prov_chan;
++struct rchan *long_prov_chan;
++atomic64_t prov_relation_id = ATOMIC64_INIT(0);
++atomic64_t prov_node_id = ATOMIC64_INIT(0);
++
++/*
++ * create_buf_file() callback.  Creates relay file in debugfs.
++ */
++static struct dentry *create_buf_file_handler(const char *filename,
++					      struct dentry *parent,
++					      umode_t mode,
++					      struct rchan_buf *buf,
++					      int *is_global)
++{
++	return debugfs_create_file(filename, mode, parent, buf,
++				   &relay_file_operations);
++}
++
++/*
++ * remove_buf_file() callback.  Removes relay file from debugfs.
++ */
++static int remove_buf_file_handler(struct dentry *dentry)
++{
++	debugfs_remove(dentry);
++	return 0;
++}
++
++/*
++ * relay interface callbacks
++ */
++static struct rchan_callbacks relay_callbacks = {
++
++	.create_buf_file	= create_buf_file_handler,
++	.remove_buf_file	= remove_buf_file_handler,
++};
++
++static void write_boot_buffer(void)
++{
++	if (boot_buffer->nb_entry > 0)
++		relay_write(prov_chan, boot_buffer->buffer, boot_buffer->nb_entry * sizeof(union prov_msg));
++	kfree(boot_buffer);
++	boot_buffer = NULL;
++
++	if (long_boot_buffer->nb_entry > 0)
++		relay_write(long_prov_chan, long_boot_buffer->buffer, long_boot_buffer->nb_entry * sizeof(union long_prov_msg));
++	kfree(long_boot_buffer);
++	long_boot_buffer = NULL;
++}
++
++bool relay_ready;
++extern struct workqueue_struct *prov_queue;
++
++static int __init relay_prov_init(void)
++{
++	prov_chan = relay_open(PROV_BASE_NAME, NULL, PROV_RELAY_BUFF_SIZE, PROV_NB_SUBBUF, &relay_callbacks, NULL);
++	if (!prov_chan)
++		panic("Provenance: relay_open failure\n");
++
++	long_prov_chan = relay_open(LONG_PROV_BASE_NAME, NULL, PROV_RELAY_BUFF_SIZE, PROV_NB_SUBBUF, &relay_callbacks, NULL);
++	if (!long_prov_chan)
++		panic("Provenance: relay_open failure\n");
++	relay_ready = true;
++	// relay buffer are ready, we can write down the boot buffer
++	write_boot_buffer();
++	pr_info("Provenance: relay ready.\n");
++	return 0;
++}
++core_initcall(relay_prov_init);
+diff -uprN -b -B ./pristine/linux-4.10.5/security/security.c ./linux-4.10.5/security/security.c
+--- ./pristine/linux-4.10.5/security/security.c	2017-03-22 12:38:58.000000000 +0000
++++ ./linux-4.10.5/security/security.c	2017-03-23 15:17:52.446221899 +0000
+@@ -20,6 +20,7 @@
+ #include <linux/integrity.h>
+ #include <linux/ima.h>
+ #include <linux/evm.h>
++#include <linux/camflow.h>
+ #include <linux/fsnotify.h>
+ #include <linux/mman.h>
+ #include <linux/mount.h>
+@@ -67,6 +68,10 @@ int __init security_init(void)
+ 	 */
+ 	do_security_initcalls();
+ 
++	/*
++	* Provenance is the last module to be loaded
++	*/
++	provenance_add_hooks();
+ 	return 0;
+ }
+ 
+Binary files ./pristine/linux-4.10.5/tools/objtool/fixdep and ./linux-4.10.5/tools/objtool/fixdep differ
+Binary files ./pristine/linux-4.10.5/tools/objtool/objtool and ./linux-4.10.5/tools/objtool/objtool differ
+Binary files ./pristine/linux-4.10.5/usr/initramfs_data.cpio.gz and ./linux-4.10.5/usr/initramfs_data.cpio.gz differ
