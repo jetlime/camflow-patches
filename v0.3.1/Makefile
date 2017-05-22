@@ -7,8 +7,6 @@ prepare:
 	cd ./build && wget https://www.kernel.org/pub/linux/kernel/v4.x/linux-$(kernel-version).tar.xz && tar -xJf linux-$(kernel-version).tar.xz && cd ./linux-$(kernel-version) && $(MAKE) mrproper
 	cd ./build/linux-$(kernel-version) && patch --dry-run -p2 < ../../patch-$(kernel-version)-v$(lsm-version)
 	cd ./build/linux-$(kernel-version) && patch -p2 < ../../patch-$(kernel-version)-v$(lsm-version)
-	cd ./build/linux-$(kernel-version) && sed -i -e "s/EXTRAVERSION =/EXTRAVERSION = camflow-$(lsm-version)/g" Makefile
-
 config:
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
 	cd ./build/linux-$(kernel-version) && ./scripts/kconfig/streamline_config.pl > config_strip
