@@ -10,6 +10,7 @@ prepare:
 
 config:
 	cd ./build/linux-$(kernel-version) && cp -f /boot/config-$(shell uname -r) .config
+	cd ./build/linux-$(kernel-version) && $(MAKE) olddefconfig
 	cd ./build/linux-$(kernel-version) && $(MAKE) menuconfig
 	cd ./build/linux-$(kernel-version) && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
 
