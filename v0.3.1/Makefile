@@ -27,3 +27,6 @@ compile:
 install:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) modules_install
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) install
+
+clean:
+	rm -rf ./build
