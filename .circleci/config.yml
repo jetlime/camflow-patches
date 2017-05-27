@@ -3,11 +3,11 @@ jobs:
   build:
     working_directory: ~/
     docker:
-      - image: buildpack-deps:trusty
+      - image: moul/kernel-builder:latest
     steps:
       - run:
-          name: rubygems
-          command: 'sudo apt-get install rubygems'
+          name: ruby
+          command: 'sudo apt-get install ruby'
       - run:
           name: package_cloud
           command: 'gem install package_cloud'
