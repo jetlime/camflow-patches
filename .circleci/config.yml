@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/
     docker:
-      - image: moul/kernel-builder:latest
+      - image: buildpack-deps:zesty
     steps:
       - run:
           name: ruby
