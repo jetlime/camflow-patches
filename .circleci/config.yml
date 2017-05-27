@@ -6,6 +6,9 @@ jobs:
       - image: buildpack-deps:trusty
     steps:
       - run:
+          name: rubygems
+          command: 'sudo apt-get install rubygems'
+      - run:
           name: package_cloud
           command: 'gem install package_cloud'
       - run:
