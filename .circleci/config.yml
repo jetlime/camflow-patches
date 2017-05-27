@@ -5,6 +5,7 @@ jobs:
     docker:
       - image: moul/kernel-builder:latest
     steps:
+      - checkout
       - run:
           name: update
           command: 'apt-get update -qq'
@@ -14,7 +15,6 @@ jobs:
       - run:
           name: dependencies
           command: 'apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
-      - checkout
       - run:
           name: prepare
           command: 'cd ./v0.3.1 && make prepare'
