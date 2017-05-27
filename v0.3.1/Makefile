@@ -31,16 +31,6 @@ compile:
 rpm:
 	echo "Starting building rpm..."
 	cd ./build/linux-$(kernel-version) && $(MAKE) rpm-pkg
-	mkdir -p output
-	echo "Moving src rpm..."
-	mv -f /home/${USER}/rpmbuild/SRPMS/kernel-$(kernel-version)camflow_$(lsm-version)-2.src.rpm output/kernel-$(kernel-version)camflow_$(lsm-version)-2.src.rpm
-	echo "Moving kernel rpm..."
-	mv -f /home/${USER}/rpmbuild/RPMS/x86_64/kernel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm output/kernel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
-	echo "Moving kernel headers rpm..."
-	mv -f /home/${USER}/rpmbuild/RPMS/x86_64/kernel-headers-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm output/kernel-headers-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
-	echo "Moving kernel devel rpm..."
-	mv -f /home/${USER}/rpmbuild/RPMS/x86_64/kernel-devel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm output/kernel-devel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
-	echo "Done."
 
 install:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) modules_install
