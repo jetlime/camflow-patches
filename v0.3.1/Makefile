@@ -17,12 +17,23 @@ config:
 config_travis:
 	cp -f /boot/config-$(shell uname -r) .config
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
-	cd ./build/linux-$(kernel-version) && $(MAKE) defconfig
+	cd ./build/linux-$(kernel-version) && $(MAKE) olddefconfig
 	cd ./build/linux-$(kernel-version) && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
+
+config_circle:
+	cd ./build/linux-$(kernel-version) && cp ../../.config .config
+	cd ./build/linux-$(kernel-version) && $(MAKE) olddefconfig
 
 compile:
 	cd ./build/linux-$(kernel-version) && $(MAKE) -j4
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
+
+rpm:
+	mkdir -p output
+	cp -f /home/${USER}/rpmbuild/SRPMS/kernel-$(kernel-version)camflow_$(lsm-version)-2.src.rpm output/kernel-$(kernel-version)camflow_$(lsm-version)-2.src.rpm
+	cp -f /home/${USER}/rpmbuild/RPMS/x86_64/kernel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm output/kernel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
+	cp -f /home/${USER}/rpmbuild/RPMS/x86_64/kernel-headers-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm output/kernel-headers-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
+	cp -f /home/${USER}/rpmbuild/RPMS/x86_64/kernel-devel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm output/kernel-devel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
 
 install:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) modules_install

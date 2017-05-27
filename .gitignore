@@ -36,6 +36,7 @@
 
 #build directory
 */build/*
+*/output/*
 
 # Debug files
 *.dSYM/
