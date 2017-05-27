@@ -7,16 +7,16 @@ jobs:
     steps:
       - run:
           name: ruby
-          command: 'sudo apt-get install ruby'
+          command: 'apt -y install ruby'
       - run:
           name: package_cloud
           command: 'gem install package_cloud'
       - run:
           name: build-essential
-          command: 'sudo apt-get -y install build-essential'
+          command: 'apt -y install build-essential'
       - run:
           name: dependencies
-          command: 'sudo apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
+          command: 'apt -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
       - checkout
       - run:
           name: prepare
