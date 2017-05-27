@@ -5,7 +5,6 @@ arch=x86_64
 prepare:
 	mkdir -p build
 	cd ./build && wget https://www.kernel.org/pub/linux/kernel/v4.x/linux-$(kernel-version).tar.xz && tar -xJf linux-$(kernel-version).tar.xz && cd ./linux-$(kernel-version) && $(MAKE) mrproper
-	cd ./build/linux-$(kernel-version) && patch --dry-run -p2 < ../../patch-$(kernel-version)-v$(lsm-version)
 	cd ./build/linux-$(kernel-version) && patch -p2 < ../../patch-$(kernel-version)-v$(lsm-version)
 
 config:
@@ -21,7 +20,7 @@ config_travis:
 
 config_circle:
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
-	cd ./build/linux-$(kernel-version) && $(MAKE) olddefconfig
+	cd ./build/linux-$(kernel-version) && $(MAKE) silentoldconfig
 
 compile:
 	cd ./build/linux-$(kernel-version) && $(MAKE) -j4
@@ -29,12 +28,13 @@ compile:
 
 rpm:
 	echo "Starting building rpm..."
-	cd ./build/linux-$(kernel-version) && $(MAKE) binrpm-pkg
+	cd ./build/linux-$(kernel-version) && $(MAKE) -j4 rpm-pkg
+
+publish:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /home/${USER}/rpmbuild/RPMS/x86_64/*.rpm ./output
-
-publish:
+	mv -f /home/${USER}/rpmbuild/SRPMS/*.rpm ./output
 	echo "Publishing kernel package..."
 	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
 	echo "Publishing kernel headers package..."
@@ -46,3 +46,4 @@ install:
 
 clean:
 	rm -rf ./build
+	rm -rf ./output

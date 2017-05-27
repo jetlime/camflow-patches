@@ -1,20 +1,16 @@
 dependencies:
   pre:
     - gem install package_cloud
+    - sudo apt-get -y install build-essential
+    - sudo apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev
 
 test:
   override:
-    - sudo apt-get update -qq
-    - sudo apt-get -y install build-essential
-    - sudo apt-get -y install libncurses-dev cmake clang g++ wget git libssl-dev
-    - sudo apt-get -y install bc nano patch mosquitto
-    - sudo apt-get -y install libelf-dev sparse flawfinder
-    - sudo apt-get -y install libedit-dev
-    - sudo apt-get -y install rpm
+    - nproc
     - cd ./v0.3.1 && make prepare
     - cd ./v0.3.1 && make config_circle
     - cd ./v0.3.1 && make rpm:
-      timeout: 1200
+      timeout: 1800
 
 deployment:
   production:
