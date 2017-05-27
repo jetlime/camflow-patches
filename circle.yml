@@ -1,7 +1,7 @@
 dependencies:
   pre:
     - gem install package_cloud
-    
+
 test:
   override:
     - sudo apt-get update -qq
@@ -11,7 +11,10 @@ test:
     - sudo apt-get -y install libelf-dev sparse flawfinder
     - sudo apt-get -y install libedit-dev
     - sudo apt-get -y install rpm
-    - cd ./v0.3.1 && make prepare && make config_circle && make rpm
+    - cd ./v0.3.1 && make prepare
+    - cd ./v0.3.1 && make config_circle
+    - cd ./v0.3.1 && make rpm:
+      timeout: 1200
 
 deployment:
   production:

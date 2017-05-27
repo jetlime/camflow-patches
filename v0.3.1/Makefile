@@ -29,7 +29,7 @@ compile:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
 
 rpm:
-	cd ./build/linux-$(kernel-version) && $(MAKE) rpm
+	cd ./build/linux-$(kernel-version) && $(MAKE) rpm-pkg
 	mkdir -p output
 	mv -f /home/${USER}/rpmbuild/SRPMS/kernel-$(kernel-version)camflow_$(lsm-version)-2.src.rpm output/kernel-$(kernel-version)camflow_$(lsm-version)-2.src.rpm
 	mv -f /home/${USER}/rpmbuild/RPMS/x86_64/kernel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm output/kernel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
