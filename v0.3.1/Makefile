@@ -28,12 +28,16 @@ compile:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
 
 rpm:
-	mkdir -p output
 	echo "Starting building rpm..."
-	cp -f /home/${USER}/rpmbuild/RPMS/x86_64/*.rpm ./output
+	cd ./build/linux-$(kernel-version) && $(MAKE) binrpm-pkg
+	echo "Preparing packages..."
+	mkdir -p output
+	mv -f /home/${USER}/rpmbuild/RPMS/x86_64/*.rpm ./output
 
 publish:
+	echo "Publishing kernel package..."
 	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
+	echo "Publishing kernel headers package..."
 	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
 
 install:
