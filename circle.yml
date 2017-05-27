@@ -9,8 +9,9 @@ dependencies:
     - sudo apt-get -y install libedit-dev
     - sudo apt-get -y install rpm
 
-checkout:
-  post:
+
+test:
+  override:
     cd ./v0.3.1 && make prepare && make config_circle && make rpm
 
 deployment:
