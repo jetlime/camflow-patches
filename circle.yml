@@ -13,7 +13,7 @@ test:
     - sudo apt-get -y install rpm
     - cd ./v0.3.1 && make prepare
     - cd ./v0.3.1 && make config_circle
-    - cd ./v0.3.1 && && make rpm:
+    - cd ./v0.3.1 && make rpm:
       timeout: 1200
 
 deployment:
