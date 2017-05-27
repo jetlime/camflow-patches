@@ -20,7 +20,4 @@ deployment:
   production:
     branch: master
     commands:
-      - cd ./v0.3.1/output && package_cloud push tfjmp/camflow/fedora/25 kernel-4.11.2camflow_0.3.1-2.src.rpm
-      - cd ./v0.3.1/output && package_cloud push tfjmp/camflow/fedora/25 kernel-4.11.2camflow_0.3.1-2.x86_64.rpm
-      - cd ./v0.3.1/output && package_cloud push tfjmp/camflow/fedora/25 kernel-devel-4.11.2camflow_0.3.1-2.x86_64.rpm
-      - cd ./v0.3.1/output && package_cloud push tfjmp/camflow/fedora/25 kernel-headers-4.11.2camflow_0.3.1-2.x86_64.rpm
+      - cd ./v0.3.1 && make publish

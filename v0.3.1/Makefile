@@ -18,7 +18,6 @@ config_travis:
 	cp -f /boot/config-$(shell uname -r) .config
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
 	cd ./build/linux-$(kernel-version) && $(MAKE) defconfig
-	cd ./build/linux-$(kernel-version) && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
 
 config_circle:
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
@@ -29,8 +28,13 @@ compile:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
 
 rpm:
+	mkdir -p output
 	echo "Starting building rpm..."
-	cd ./build/linux-$(kernel-version) && $(MAKE) rpm-pkg
+	cp -f /home/${USER}/rpmbuild/RPMS/x86_64/*.rpm ./output
+
+publish:
+	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
+	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
 
 install:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) modules_install
