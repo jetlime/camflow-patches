@@ -1,8 +1,8 @@
 # Build Status
 
-| Branch | Status                                                                                  |
-|--------|-----------------------------------------------------------------------------------------|
-| master | [![Master Build Status](https://api.travis-ci.org/CamFlow/camflow-patches.svg?branch=master)](https://travis-ci.org/CamFlow/camflow-patches/branches)  |
+| Branch | Build Status| Package Status |
+|--------|-------------|----------------|
+| master | [![Master Build Status](https://api.travis-ci.org/CamFlow/camflow-patches.svg?branch=master)](https://travis-ci.org/CamFlow/camflow-patches/branches)  | [![Package Creation Status](https://circleci.com/gh/CamFlow/camflow-patches.svg?style=shield)](https://circleci.com/gh/CamFlow/camflow-patches) |
 
 Automated Travis test verifies:
 - patch can be applied to the kernel;
