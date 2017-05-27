@@ -2,6 +2,8 @@ version: 2
 jobs:
   build:
     working_directory: ~/
+    docker:
+      - image: moul/kernel-builder:latest
     steps:
       - run:
           name: build-essential
