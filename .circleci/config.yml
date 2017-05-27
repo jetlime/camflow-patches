@@ -6,12 +6,6 @@ jobs:
       - image: buildpack-deps:zesty
     steps:
       - run:
-          name: ruby
-          command: 'apt -y install ruby'
-      - run:
-          name: package_cloud
-          command: 'gem install package_cloud'
-      - run:
           name: build-essential
           command: 'apt -y install build-essential'
       - run:
@@ -27,6 +21,12 @@ jobs:
       - run:
           name: rpm
           command: 'cd ./v0.3.1 && make rpm'
+      - run:
+          name: ruby
+          command: 'apt -y install ruby-full'
+      - run:
+          name: package_cloud
+          command: 'gem install package_cloud'
       - deploy:
           name: publish
           command: |
