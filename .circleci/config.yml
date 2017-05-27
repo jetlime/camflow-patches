@@ -2,9 +2,10 @@ version: 2
 jobs:
   build:
     working_directory: ~/
-    docker:
-      - image: buildpack-deps:zesty
     steps:
+      - run:
+          name: build-essential
+          command: 'apt-get -y install build-essential'
       - run:
           name: dependencies
           command: 'apt -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
