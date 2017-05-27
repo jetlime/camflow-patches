@@ -1,0 +1,32 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/
+    docker:
+      - image: buildpack-deps:trusty
+    steps:
+      - checkout
+      - run:
+        name: package_cloud
+        command: 'gem install package_cloud'
+      - run:
+        name: build-essential
+        command: 'sudo apt-get -y install build-essential'
+      - run:
+        name: dependencies
+        command: 'sudo apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
+      - run:
+        name: prepare
+        command: 'cd ./v0.3.1 && make prepare'
+      - run:
+        name: config
+        command: 'cd ./v0.3.1 && make config_circle'
+      - run:
+        name: config
+        command: 'cd ./v0.3.1 && make rpm'
+      - deploy:
+          name: publish
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              cd ./v0.3.1 && make publish
+            fi
