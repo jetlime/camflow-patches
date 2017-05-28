@@ -30,10 +30,23 @@ rpm:
 	echo "Starting building rpm..."
 	cd ./build/linux-$(kernel-version) && $(MAKE) -j4 binrpm-pkg
 
-publish:
+copy_local:
+	echo "Preparing packages..."
+	mkdir -p output
+	mv -f /home/$(USER)/rpmbuild/RPMS/x86_64/*.rpm ./output
+
+copy:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
+
+publish_local: copy_local
+	echo "Publishing kernel headers package..."
+	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
+	echo "Publishing kernel package..."
+	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
+
+publish: copy
 	echo "Publishing kernel package..."
 	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
 	echo "Publishing kernel headers package..."

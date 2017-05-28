@@ -24,7 +24,7 @@ jobs:
       - run:
           name: rpm
           command: 'cd ./v0.3.1 && make rpm'
-          timeout: 3600
+          no_output_timeout: 3600
       - run:
           name: ruby
           command: 'apt-get -y install ruby-full'
