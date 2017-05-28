@@ -39,6 +39,7 @@ copy:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
+	cd ./output && ls
 
 publish_local: copy_local
 	echo "Publishing kernel headers package..."
