@@ -28,13 +28,12 @@ compile:
 
 rpm:
 	echo "Starting building rpm..."
-	cd ./build/linux-$(kernel-version) && $(MAKE) -j4 rpm-pkg
+	cd ./build/linux-$(kernel-version) && $(MAKE) -j4 binrpm-pkg
 
 publish:
 	echo "Preparing packages..."
 	mkdir -p output
-	mv -f /home/${USER}/rpmbuild/RPMS/x86_64/*.rpm ./output
-	mv -f /home/${USER}/rpmbuild/SRPMS/*.rpm ./output
+	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
 	echo "Publishing kernel package..."
 	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
 	echo "Publishing kernel headers package..."
