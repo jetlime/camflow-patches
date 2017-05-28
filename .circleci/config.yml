@@ -7,13 +7,13 @@ jobs:
       - checkout
       - run:
           name: update
-          command: 'apt-get update -qq'
+          command: 'sudo apt-get update -qq'
       - run:
           name: build-essential
-          command: 'apt-get -y install build-essential'
+          command: 'sudo apt-get -y install build-essential'
       - run:
           name: dependencies
-          command: 'apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
+          command: 'sudo apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
       - run:
           name: prepare
           command: 'cd ./v0.3.1 && make prepare'
@@ -25,7 +25,7 @@ jobs:
           command: 'cd ./v0.3.1 && make rpm'
       - run:
           name: ruby
-          command: 'apt-get -y install ruby-full'
+          command: 'sudo apt-get -y install ruby-full'
       - run:
           name: package_cloud
           command: 'gem install package_cloud'
