@@ -26,6 +26,9 @@ jobs:
           command: 'cd ./v0.3.1 && make rpm'
           no_output_timeout: 3600
       - run:
+          name: move
+          command: 'cd ./v0.3.1 && make move'
+      - run:
           name: ruby
           command: 'apt-get -y install ruby-full'
       - run:

@@ -30,28 +30,25 @@ rpm:
 	echo "Starting building rpm..."
 	cd ./build/linux-$(kernel-version) && $(MAKE) -j4 binrpm-pkg
 
-copy_local:
+move_local:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /home/$(USER)/rpmbuild/RPMS/x86_64/*.rpm ./output
+	rename -n 's/-1-9//gi' *.rpm
 
-copy:
+move:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
 	cd ./output && ls
 
-publish_local: copy_local
+publish:
+	cd ./output && rename -v -f 's/$(lsm-version)-[1-9]/$(lsm-version)/gi' *.rpm
 	echo "Publishing kernel headers package..."
-	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
+	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
 	echo "Publishing kernel package..."
-	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version)-2.x86_64.rpm
+	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
 
-publish: copy
-	echo "Publishing kernel package..."
-	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
-	echo "Publishing kernel headers package..."
-	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm
 
 install:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) modules_install
