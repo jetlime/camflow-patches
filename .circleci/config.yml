@@ -1,19 +1,20 @@
 version: 2
 jobs:
   build:
-    machine: true
+    docker:
+      - image: moul/kernel-builder:latest
     working_directory: ~/circulate
     steps:
       - checkout
       - run:
           name: update
-          command: 'sudo apt-get update -qq'
+          command: 'apt-get update -qq'
       - run:
           name: build-essential
-          command: 'sudo apt-get -y install build-essential'
+          command: 'apt-get -y install build-essential'
       - run:
           name: dependencies
-          command: 'sudo apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
+          command: 'apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
       - run:
           name: prepare
           command: 'cd ./v0.3.1 && make prepare'
@@ -23,9 +24,10 @@ jobs:
       - run:
           name: rpm
           command: 'cd ./v0.3.1 && make rpm'
+          timeout: 3600
       - run:
           name: ruby
-          command: 'sudo apt-get -y install ruby-full'
+          command: 'apt-get -y install ruby-full'
       - run:
           name: package_cloud
           command: 'gem install package_cloud'
