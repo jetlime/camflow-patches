@@ -45,9 +45,9 @@ move:
 publish:
 	cd ./output && rename -v -f 's/$(lsm-version)-[1-9]/$(lsm-version)/gi' *.rpm
 	echo "Publishing kernel headers package..."
-	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
 	echo "Publishing kernel package..."
-	cd ./output && package_cloud push tfjmp/camflow/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
 
 
 install:
