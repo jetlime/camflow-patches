@@ -28,27 +28,26 @@ compile:
 
 rpm:
 	echo "Starting building rpm..."
-	cd ./build/linux-$(kernel-version) && $(MAKE) -j4 binrpm-pkg
+	cd ./build/linux-$(kernel-version) && $(MAKE) -j4 rpm-pkg
 
 move_local:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /home/$(USER)/rpmbuild/RPMS/x86_64/*.rpm ./output
-	rename -n 's/-1-9//gi' *.rpm
+	mv -f /home/$(USER)/rpmbuild/SRPMS/*.rpm ./output
 
 move:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
-	cd ./output && ls
+	mv -f /root/rpmbuild/SRPMS/*.rpm ./output
 
 publish:
 	cd ./output && rename -v -f 's/$(lsm-version)-[1-9]/$(lsm-version)/gi' *.rpm
-	echo "Publishing kernel headers package..."
 	cd ./output && package_cloud push camflow/provenance/fedora/25 kernel-headers-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
-	echo "Publishing kernel package..."
 	cd ./output && package_cloud push camflow/provenance/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
-
+	cd ./output && package_cloud push camflow/provenance/fedora/25 kernel-$(kernel-version)camflow_$(lsm-version).src.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/25 kernel-devel-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
 
 install:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) modules_install
