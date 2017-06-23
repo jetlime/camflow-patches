@@ -11,7 +11,7 @@ before_install:
   - sudo apt-get -y install libedit-dev
 
 script:
-  - cd ./v0.3.2 && make prepare && make config_travis && make compile && make install && make clean
+  - cd ./v0.3.3 && make prepare && make config_travis && make compile && make install && make clean
 
 notifications:
   slack: camflow:T3Umf9cAIwKnaxFEkjeZV7RM
