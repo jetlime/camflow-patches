@@ -17,17 +17,17 @@ jobs:
           command: 'apt-get -y install rpm libncurses-dev cmake clang g++ wget git libssl-dev bc patch libedit-dev libelf-dev'
       - run:
           name: prepare
-          command: 'cd ./v0.3.2 && make prepare'
+          command: 'cd ./v0.3.3 && make prepare'
       - run:
           name: config
-          command: 'cd ./v0.3.2 && make config_circle'
+          command: 'cd ./v0.3.3 && make config_circle'
       - run:
           name: rpm
-          command: 'cd ./v0.3.2 && make rpm'
+          command: 'cd ./v0.3.3 && make rpm'
           no_output_timeout: 3600
       - run:
           name: move
-          command: 'cd ./v0.3.2 && make move'
+          command: 'cd ./v0.3.3 && make move'
       - run:
           name: ruby
           command: 'apt-get -y install ruby-full'
@@ -38,5 +38,5 @@ jobs:
           name: publish
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              cd ./v0.3.2 && make publish
+              cd ./v0.3.3 && make publish
             fi
