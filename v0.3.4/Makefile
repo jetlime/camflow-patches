@@ -16,7 +16,7 @@ config:
 config_travis:
 	cp -f /boot/config-$(shell uname -r) .config
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
-	cd ./build/linux-$(kernel-version) && $(MAKE) defconfig
+	cd ./build/linux-$(kernel-version) && $(MAKE) olddefconfig
 
 config_circle:
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
