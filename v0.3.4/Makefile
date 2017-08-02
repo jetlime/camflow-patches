@@ -15,7 +15,11 @@ config:
 
 config_travis:
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
-	cd ./build/linux-$(kernel-version) && $(MAKE) silentoldconfig
+	cd ./build/linux-$(kernel-version) && ./scripts/kconfig/streamline_config.pl > config_strip
+	cd ./build/linux-$(kernel-version) &&  mv .config config_sav
+	cd ./build/linux-$(kernel-version) &&  mv config_strip .config
+	cd ./build/linux-$(kernel-version) && $(MAKE) olddefconfig
+	cd ./build/linux-$(kernel-version) && $(MAKE) oldconfig
 
 config_circle:
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
