@@ -14,9 +14,8 @@ config:
 	cd ./build/linux-$(kernel-version) && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
 
 config_travis:
-	cp -f /boot/config-$(shell uname -r) .config
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
-	cd ./build/linux-$(kernel-version) && $(MAKE) olddefconfig
+	cd ./build/linux-$(kernel-version) && $(MAKE) silentoldconfig
 
 config_circle:
 	cd ./build/linux-$(kernel-version) && cp ../../.config .config
