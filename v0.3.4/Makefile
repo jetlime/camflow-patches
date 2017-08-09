@@ -44,18 +44,13 @@ move:
 	mkdir -p output
 	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
 	mv -f /root/rpmbuild/SRPMS/*.rpm ./output
-	
-rename:
-	mv -f kernel-headers-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm kernel-headers-$(kernel-version)camflow-$(lsm-version).x86_64.rpm
-	mv -f kernel-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm kernel-$(kernel-version)camflow-$(lsm-version).x86_64.rpm
-	mv -f kernel-$(kernel-version)camflow_$(lsm-version)-1.src.rpm kernel-$(kernel-version)camflow-$(lsm-version).src.rpm
-	mv -f kernel-devel-$(kernel-version)camflow_$(lsm-version)-1.x86_64.rpm kernel-devel-$(kernel-version)camflow-$(lsm-version).x86_64.rpm
 
-publish: rename
-	cd ./output && package_cloud push camflow/provenance/fedora/26 kernel-headers-$(kernel-version)camflow-$(lsm-version).x86_64.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/26 kernel-$(kernel-version)camflow-$(lsm-version).x86_64.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/26 kernel-$(kernel-version)camflow-$(lsm-version).src.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/26 kernel-devel-$(kernel-version)camflow-$(lsm-version).x86_64.rpm
+publish:
+	cd ./output && rename -v -f 's/$(lsm-version)-[1-9]/$(lsm-version)/gi' *.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/26 kernel-headers-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/26 kernel-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/26 kernel-$(kernel-version)camflow_$(lsm-version).src.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/26 kernel-devel-$(kernel-version)camflow_$(lsm-version).x86_64.rpm
 
 install:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) modules_install
