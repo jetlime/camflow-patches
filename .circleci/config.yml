@@ -30,7 +30,7 @@ jobs:
           command: 'cd ./v0.3.8 && make move'
       - run:
           name: ruby
-          command: 'apt-get -y install ruby-full'
+          command: 'apt-get -y install ruby2.3 ruby2.3-dev'
       - run:
           name: package_cloud
           command: 'gem install package_cloud'
