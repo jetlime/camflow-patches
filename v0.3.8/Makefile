@@ -57,5 +57,5 @@ install:
 	cd ./build/linux-$(kernel-version) && sudo $(MAKE) install
 
 clean:
-	rm -rf ./build 
+	rm -rf ./build
 	rm -rf ./output
