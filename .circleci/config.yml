@@ -32,6 +32,9 @@ jobs:
           name: ruby
           command: 'apt-get -y install ruby2.3 ruby2.3-dev'
       - run:
+          name: rake
+          command: 'gem install rake'
+      - run:
           name: package_cloud
           command: 'gem install package_cloud'
       - deploy:
