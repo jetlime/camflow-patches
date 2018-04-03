@@ -3,25 +3,26 @@ arch=x86_64
 
 prepare:
 	mkdir -p build
-	cd ./build && wget https://www.kernel.org/pub/linux/kernel/v4.x/linux-$(kernel-version).tar.xz && tar -xJf linux-$(kernel-version).tar.xz && cd ./linux-$(kernel-version) && $(MAKE) mrproper
-	cd ./build/linux-$(kernel-version) && patch --dry-run -p2 < ../../patch-$(kernel-version)-v0.1.1
-	cd ./build/linux-$(kernel-version) && patch -p2 < ../../patch-$(kernel-version)-v0.1.1
+	cd ./build && git clone -b v$(kernel-version) --single-branch git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
+	cd ./build/linux-stable && $(MAKE) mrproper
+	cd ./build/linux-stable && patch --dry-run -p2 < ../../patch-$(kernel-version)-v0.1.1
+	cd ./build/linux-stable && patch -p2 < ../../patch-$(kernel-version)-v0.1.1
 
 config:
-	cd ./build/linux-$(kernel-version) && cp ../../.config .config
-	cd ./build/linux-$(kernel-version) && ./scripts/kconfig/streamline_config.pl > config_strip
-	cd ./build/linux-$(kernel-version) &&  mv .config config_sav
-	cd ./build/linux-$(kernel-version) &&  mv config_strip .config
-	cd ./build/linux-$(kernel-version) && $(MAKE) menuconfig
+	cd ./build/linux-stable && cp ../../.config .config
+	cd ./build/linux-stable && ./scripts/kconfig/streamline_config.pl > config_strip
+	cd ./build/linux-stable &&  mv .config config_sav
+	cd ./build/linux-stable &&  mv config_strip .config
+	cd ./build/linux-stable && $(MAKE) menuconfig
 
 config_travis:
-	cd ./build/linux-$(kernel-version) && cp ../../.config .config
-	cd ./build/linux-$(kernel-version) && $(MAKE) defconfig
+	cd ./build/linux-stable && cp ../../.config .config
+	cd ./build/linux-stable && $(MAKE) defconfig
 
 compile:
-	cd ./build/linux-$(kernel-version) && $(MAKE) -j4
-	cd ./build/linux-$(kernel-version) && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
+	cd ./build/linux-stable && $(MAKE) -j4
+	cd ./build/linux-stable && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
 
 install:
-	cd ./build/linux-$(kernel-version) && sudo $(MAKE) modules_install
-	cd ./build/linux-$(kernel-version) && sudo $(MAKE) install
+	cd ./build/linux-stable && sudo $(MAKE) modules_install
+	cd ./build/linux-stable && sudo $(MAKE) install
