@@ -2,6 +2,16 @@ dist: trusty
 sudo: required
 language: c
 
+addons:
+  apt:
+    sources:
+    # add PPAs with more up-to-date toolchains
+    - ubuntu-toolchain-r-test
+    packages:
+    # install toolchains
+    - gcc-7
+    - g++-7
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get -y install build-essential
@@ -11,6 +21,10 @@ before_install:
   - sudo apt-get -y install libedit-dev
 
 script:
+  - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-7 /usr/bin/gcc
+  - sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++
+  - gcc --version
+  - g++ --version
   - cd ./v0.3.11 && make prepare && make config_travis && make compile && make install && make clean
 
 notifications:
