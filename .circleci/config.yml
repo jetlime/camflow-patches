@@ -11,7 +11,7 @@ jobs:
           command: 'apt-get update -qq'
       - run:
           name: toolchain-r
-          command: 'sudo add-apt-repository ppa:ubuntu-toolchain-r/test'
+          command: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
       - run:
           name: update2
           command: 'apt-get update'
@@ -23,10 +23,10 @@ jobs:
           command: 'apt-get -y install rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev'
       - run:
           name: gcc-4.9
-          command: 'sudo apt-get install gcc-4.9 && sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-9 /usr/bin/gcc'
+          command: 'apt-get install gcc-4.9 && unlink /usr/bin/gcc && ln -s /usr/bin/gcc-9 /usr/bin/gcc'
       - run:
           name: g++-4.9
-          command: 'sudo apt-get install g++-4.9 && sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-9 /usr/bin/g++'
+          command: 'apt-get install g++-4.9 && unlink /usr/bin/g++ && ln -s /usr/bin/g++-9 /usr/bin/g++'
       - run:
           name: prepare
           command: 'cd ./v0.3.11 && make prepare'
