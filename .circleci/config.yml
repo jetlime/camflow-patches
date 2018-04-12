@@ -10,6 +10,9 @@ jobs:
           name: update
           command: 'apt-get update -qq'
       - run:
+          name: install-add-apt-repository
+          command: 'apt-get install sotfware-properties-common python-software-properties'
+      - run:
           name: toolchain-r
           command: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
       - run:
