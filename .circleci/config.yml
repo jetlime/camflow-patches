@@ -26,10 +26,16 @@ jobs:
           command: 'apt-get -y install rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev'
       - run:
           name: gcc-4.9
-          command: 'apt-get install -y gcc-4.9 && unlink /usr/bin/gcc && ln -s /usr/bin/gcc-9 /usr/bin/gcc'
+          command: 'apt-get install -y gcc-4.9 g++-4.9'
       - run:
-          name: g++-4.9
-          command: 'apt-get install -y g++-4.9 && unlink /usr/bin/g++ && ln -s /usr/bin/g++-9 /usr/bin/g++'
+          name: link-gcc
+          command: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9'
+      - run:
+          name: gcc-version
+          command: 'gcc --version'
+      - run:
+          name: g++-version
+          command: 'g++ --version'
       - run:
           name: prepare
           command: 'cd ./v0.3.11 && make prepare'
