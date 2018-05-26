@@ -37,6 +37,12 @@ jobs:
           name: g++-version
           command: 'g++ --version'
       - run:
+          name: bison
+          command: 'bison'
+      - run:
+          name: flex
+          command: 'flex'
+      - run:
           name: prepare
           command: 'cd ./v0.4.0 && make prepare'
       - run:
