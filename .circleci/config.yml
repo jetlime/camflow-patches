@@ -38,10 +38,10 @@ jobs:
           command: 'g++ --version'
       - run:
           name: bison
-          command: 'bison'
+          command: 'apt-get install -y bison'
       - run:
           name: flex
-          command: 'flex'
+          command: 'apt-get install -y flex'
       - run:
           name: prepare
           command: 'cd ./v0.4.0 && make prepare'
