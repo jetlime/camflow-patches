@@ -44,17 +44,17 @@ jobs:
           command: 'apt-get install -y flex'
       - run:
           name: prepare
-          command: 'cd ./v0.4.3 && make prepare'
+          command: 'cd ./v0.4.4 && make prepare'
       - run:
           name: config
-          command: 'cd ./v0.4.3 && make config_circle'
+          command: 'cd ./v0.4.4 && make config_circle'
       - run:
           name: rpm
-          command: 'cd ./v0.4.3 && make rpm'
+          command: 'cd ./v0.4.4 && make rpm'
           no_output_timeout: 3600
       - run:
           name: move
-          command: 'cd ./v0.4.3 && make move'
+          command: 'cd ./v0.4.4 && make move'
       - run:
           name: ruby
           command: 'apt-get -y install ruby2.3 ruby2.3-dev'
@@ -68,5 +68,5 @@ jobs:
           name: publish
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              cd ./v0.4.3 && make publish
+              cd ./v0.4.4 && make publish
             fi
