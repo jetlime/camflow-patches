@@ -23,7 +23,7 @@ jobs:
           command: 'apt-get -y install build-essential'
       - run:
           name: dependencies
-          command: 'apt-get -y install rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev'
+          command: 'apt-get -y install rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev module-init-tools'
       - run:
           name: gcc-7
           command: 'apt-get install -y gcc-7 g++-7'
