@@ -8,8 +8,18 @@ prepare:
 	cd ./build/linux-stable && $(MAKE) mrproper
 	cd ./build/linux-stable && patch -p2 < ../../patch-$(kernel-version)-v$(lsm-version)
 
-config:
+config_def:
+	echo "Default method to retrieve configuration"
 	cd ./build/linux-stable && cp -f /boot/config-$(shell uname -r) .config
+
+config_pi:
+	echo "Pi method to retrieve configuration"
+	sudo modprobe configs
+	zcat /proc/config.gz > /tmp/config.new
+	cd ./build/linux-stable && cp -f /tmp/config.new .config
+
+config:
+	test -f /boot/config-$(shell uname -r) && $(MAKE) config_def || $(MAKE) config_pi
 	cd ./build/linux-stable && $(MAKE) olddefconfig
 	cd ./build/linux-stable && $(MAKE) menuconfig
 	cd ./build/linux-stable && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
