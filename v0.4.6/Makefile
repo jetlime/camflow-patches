@@ -34,7 +34,7 @@ config_travis:
 
 config_circle:
 	cd ./build/linux-stable && cp ../../.config .config
-	cd ./build/linux-stable && $(MAKE) silentoldconfig
+	cd ./build/linux-stable && $(MAKE) olddefconfig
 
 compile:
 	cd ./build/linux-stable && $(MAKE) -j16
