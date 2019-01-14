@@ -43,6 +43,9 @@ jobs:
           name: flex
           command: 'apt-get install -y flex'
       - run:
+          name: cpio
+          command: 'apt-get install -y cpio'
+      - run:
           name: prepare
           command: 'cd ./v0.4.6 && make prepare'
       - run:
