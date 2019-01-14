@@ -36,25 +36,36 @@ config_circle:
 	cd ./build/linux-stable && cp ../../.config .config
 	cd ./build/linux-stable && $(MAKE) olddefconfig
 
+config_circle_ubuntu:
+	cd ./build/linux-stable && cp ../../.config .config
+	cd ./build/linux-stable && $(MAKE) olddefconfig
+
 compile:
 	cd ./build/linux-stable && $(MAKE) -j16
 	cd ./build/linux-stable && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
 
 rpm:
-	echo "Starting building rpm..."
+	echo "Starting building rpm packages..."
 	cd ./build/linux-stable && $(MAKE) -j16 rpm-pkg
+
+deb:
+	echo "Starting to build deb packages..."
+	cd ./build/linux-stable && $(MAKE) -j 16 deb-pkg
 
 move_local:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /home/$(USER)/rpmbuild/RPMS/x86_64/*.rpm ./output
 	mv -f /home/$(USER)/rpmbuild/SRPMS/*.rpm ./output
+	mv -f build/*.deb ./output
 
 move:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
 	mv -f /root/rpmbuild/SRPMS/*.rpm ./output
+	mv -f build/*.deb ./output
+	cd output && ls
 
 publish:
 	cd ./output && ls
