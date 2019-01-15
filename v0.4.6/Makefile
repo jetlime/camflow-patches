@@ -25,19 +25,19 @@ config:
 	cd ./build/linux-stable && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
 
 config_travis:
-	cd ./build/linux-stable && cp ../../.config .config
+	cd ./build/linux-stable && cp ../../.config_fedora .config
 	cd ./build/linux-stable && ./scripts/kconfig/streamline_config.pl > config_strip
 	cd ./build/linux-stable &&  mv .config config_sav
 	cd ./build/linux-stable &&  mv config_strip .config
 	cd ./build/linux-stable && $(MAKE) olddefconfig
 	cd ./build/linux-stable && $(MAKE) oldconfig
 
-config_circle:
-	cd ./build/linux-stable && cp ../../.config .config
+config_circle_fedora:
+	cd ./build/linux-stable && cp ../../.config_fedora .config
 	cd ./build/linux-stable && $(MAKE) olddefconfig
 
 config_circle_ubuntu:
-	cd ./build/linux-stable && cp ../../.config .config
+	cd ./build/linux-stable && cp ../../.config_ubuntu .config
 	cd ./build/linux-stable && $(MAKE) olddefconfig
 
 compile:

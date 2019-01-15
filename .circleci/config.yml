@@ -50,7 +50,7 @@ jobs:
           command: 'cd ./v0.4.6 && make prepare'
       - run:
           name: config
-          command: 'cd ./v0.4.6 && make config_circle'
+          command: 'cd ./v0.4.6 && make config_circle_fedora'
       - run:
           name: rpm
           command: 'cd ./v0.4.6 && make rpm'
