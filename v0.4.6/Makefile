@@ -59,6 +59,7 @@ move:
 publish:
 	cd ./output && ls
 	cd ./output && rename -v -f 's/$(lsm-version)\+-[1-9]/$(lsm-version)/gi' *.rpm
+	cd ./output && ls
 	cd ./output && package_cloud push camflow/provenance/fedora/27 kernel-headers-$(kernel-version).0camflow$(lsm-version).x86_64.rpm
 	cd ./output && package_cloud push camflow/provenance/fedora/27 kernel-$(kernel-version).0camflow$(lsm-version).x86_64.rpm
 	cd ./output && package_cloud push camflow/provenance/fedora/27 kernel-$(kernel-version).0camflow$(lsm-version).src.rpm
