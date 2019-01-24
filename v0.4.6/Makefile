@@ -75,6 +75,10 @@ publish:
 	cd ./output && package_cloud push camflow/provenance/fedora/27 kernel-$(kernel-version).0camflow$(lsm-version).x86_64.rpm
 	cd ./output && package_cloud push camflow/provenance/fedora/27 kernel-$(kernel-version).0camflow$(lsm-version).src.rpm
 	cd ./output && package_cloud push camflow/provenance/fedora/27 kernel-devel-$(kernel-version).0camflow$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-headers-$(kernel-version).0camflow$(lsm-version)+_$(kernel-version).0camflow$(lsm-version)+-1_amd64.deb
+	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-image-$(kernel-version).0camflow$(lsm-version)+-dbg_$(kernel-version).0camflow$(lsm-version)+-1_amd64.deb
+	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-image-$(kernel-version).0camflow$(lsm-version)+_$(kernel-version).0camflow$(lsm-version)+-1_amd64.deb
+	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-libc-dev_$(kernel-version).0camflow$(lsm-version)+-1_amd64.deb
 
 install:
 	cd ./build/linux-stable && sudo $(MAKE) modules_install
