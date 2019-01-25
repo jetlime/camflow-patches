@@ -43,14 +43,30 @@ jobs:
           name: flex
           command: 'apt-get install -y flex'
       - run:
+          name: cpio
+          command: 'apt-get install -y cpio'
+      - run:
           name: prepare
           command: 'cd ./v0.4.6 && make prepare'
       - run:
           name: config
-          command: 'cd ./v0.4.6 && make config_circle'
+          command: 'cd ./v0.4.6 && make config_circle_fedora'
       - run:
           name: rpm
           command: 'cd ./v0.4.6 && make rpm'
+          no_output_timeout: 3600
+      - run:
+          name: clean
+          command: 'cd ./v0.4.6 && rm -rf build'
+      - run:
+          name: prepare_ubuntu
+          command: 'cd ./v0.4.6 && make prepare'
+      - run:
+          name: config_ubuntu
+          command: 'cd ./v0.4.6 && make config_circle_ubuntu'
+      - run:
+          name: deb
+          command: 'cd ./v0.4.6 && make deb'
           no_output_timeout: 3600
       - run:
           name: move
