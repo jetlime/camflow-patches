@@ -47,30 +47,30 @@ jobs:
           command: 'apt-get install -y cpio'
       - run:
           name: prepare
-          command: 'cd ./v0.5.1 && make prepare'
+          command: 'cd ./v0.5.2 && make prepare'
       - run:
           name: config
-          command: 'cd ./v0.5.1 && make config_circle_fedora'
+          command: 'cd ./v0.5.2 && make config_circle_fedora'
       - run:
           name: rpm
-          command: 'cd ./v0.5.1 && make rpm'
+          command: 'cd ./v0.5.2 && make rpm'
           no_output_timeout: 3600
       - run:
           name: clean
-          command: 'cd ./v0.5.1 && rm -rf build'
+          command: 'cd ./v0.5.2 && rm -rf build'
       - run:
           name: prepare_ubuntu
-          command: 'cd ./v0.5.1 && make prepare'
+          command: 'cd ./v0.5.2 && make prepare'
       - run:
           name: config_ubuntu
-          command: 'cd ./v0.5.1 && make config_circle_ubuntu'
+          command: 'cd ./v0.5.2 && make config_circle_ubuntu'
       - run:
           name: deb
-          command: 'cd ./v0.5.1 && make deb'
+          command: 'cd ./v0.5.2 && make deb'
           no_output_timeout: 3600
       - run:
           name: move
-          command: 'cd ./v0.5.1 && make move'
+          command: 'cd ./v0.5.2 && make move'
       - run:
           name: ruby
           command: 'apt-get -y install ruby2.3 ruby2.3-dev'
@@ -84,5 +84,5 @@ jobs:
           name: publish
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              cd ./v0.5.1 && make publish
+              cd ./v0.5.2 && make publish
             fi
