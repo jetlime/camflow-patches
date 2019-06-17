@@ -22,9 +22,6 @@ jobs:
               apt-get install --reinstall make
               cd ./v0.6.1
               make prepare
-              ls
-              cd ..
-              ls
             fi
       - save_cache:
           key: build-{{ checksum ".circleci/config.yml" }}
@@ -43,9 +40,9 @@ jobs:
       - attach_workspace:
           at: ~/circulate
       - run: 'apt-get update -qq'
+      - run: 'apt-get upgrade'
       - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
-      - run: 'uname -r'
       - run: 'gcc --version'
       - run: 'apt-get install -y gcc-7 g++-7'
       - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100 --slave /usr/bin/g++ g++ /usr/bin/g++-7'
@@ -70,6 +67,7 @@ jobs:
       - attach_workspace:
           at: ~/circulate
       - run: 'apt-get update -qq'
+      - run: 'apt-get upgrade'
       - run: 'apt-get install -y sudo rpm cpio kmod'
       - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
       - run: 'apt-get install --reinstall make'
