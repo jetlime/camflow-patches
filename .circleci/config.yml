@@ -28,7 +28,7 @@ jobs:
             - build
       - persist_to_workspace:
           root: .
-          paths: build
+          paths: vO.6.1/build
   fedora:
     docker:
       - image: moul/kernel-builder:latest
@@ -49,7 +49,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - output
+            - vO.6.1/output
   ubuntu:
     docker:
       - image: moul/kernel-builder:latest
@@ -70,7 +70,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - output
+            - vO.6.1/output
   publish:
     docker:
       - image: moul/kernel-builder:latest
