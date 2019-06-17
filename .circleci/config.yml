@@ -20,17 +20,20 @@ jobs:
               apt-get install -y sudo
               apt-get install -y uncrustify rsync build-essential cpio ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev
               apt-get install --reinstall make
-              cd ./v0.6.1 && make prepare
+              cd ./v0.6.1
+              make prepare
               ls
-              cd ./v0.6.1 && ls
+              cd ..
+              ls
             fi
       - save_cache:
           key: build-{{ checksum ".circleci/config.yml" }}
           paths:
             - build
       - persist_to_workspace:
-          root: .
-          paths: vO.6.1/build
+          root: ~/circulate
+          paths:
+            - vO.6.1/build
   fedora:
     docker:
       - image: moul/kernel-builder:latest
