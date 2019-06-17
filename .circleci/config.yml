@@ -17,8 +17,8 @@ jobs:
             else
               echo 'Build environment was not cached.'
               apt-get update -qq
-              apt-get install -y sudo
-              apt-get install -y uncrustify rsync build-essential cpio ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev
+              apt-get install -y sudo rpm cpio
+              apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev
               apt-get install --reinstall make
               cd ./v0.6.1
               make prepare
@@ -43,7 +43,7 @@ jobs:
       - attach_workspace:
           at: ~/circulate
       - run: 'apt-get update -qq'
-      - run: 'apt-get install -y sudo'
+      - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
       - run: 'apt-get install --reinstall make'
       - run: 'cd ./v0.6.1 && make config_circle_fedora'
@@ -52,9 +52,9 @@ jobs:
           no_output_timeout: '30m'
       - run: 'cd ./v0.6.1 && make move_rpm'
       - persist_to_workspace:
-          root: .
+          root: ~/circulate
           paths:
-            - vO.6.1/output
+            - .
   ubuntu:
     docker:
       - image: moul/kernel-builder:latest
@@ -64,7 +64,7 @@ jobs:
       - attach_workspace:
           at: ~/circulate
       - run: 'apt-get update -qq'
-      - run: 'apt-get install -y sudo'
+      - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
       - run: 'apt-get install --reinstall make'
       - run: 'cd ./v0.6.1 && make config_circle_ubuntu'
@@ -73,9 +73,9 @@ jobs:
           no_output_timeout: '30m'
       - run: 'cd ./v0.6.1 && make move_deb'
       - persist_to_workspace:
-          root: .
+          root: ~/circulate
           paths:
-            - vO.6.1/output
+            - .
   publish:
     docker:
       - image: moul/kernel-builder:latest
@@ -85,7 +85,7 @@ jobs:
       - attach_workspace:
           at: ~/circulate
       - run: 'apt-get update -qq'
-      - run: 'apt-get install -y sudo'
+      - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
       - run: 'apt-get install --reinstall make'
       - run: 'gem install rake'
