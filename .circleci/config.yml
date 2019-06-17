@@ -42,7 +42,6 @@ jobs:
       - run: 'apt-get update -qq'
       - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
-      - run: 'apt-get install --reinstall make'
       - run: 'cd ./v0.6.1 && make config_circle_fedora'
       - run:
           command: 'cd ./v0.6.1 && make rpm'
@@ -63,7 +62,6 @@ jobs:
       - run: 'apt-get update -qq'
       - run: 'apt-get install -y sudo rpm cpio kmod lsb-release'
       - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
-      - run: 'apt-get install --reinstall make'
       - run: 'cd ./v0.6.1 && make config_circle_ubuntu'
       - run:
           command: 'cd ./v0.6.1 && make deb'
@@ -83,7 +81,7 @@ jobs:
           at: ~/circulate
       - run: 'apt-get update -qq'
       - run: 'apt-get install -y sudo rpm cpio'
-      - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
+      - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex'
       - run: 'apt-get install --reinstall make'
       - run: 'gem install rake'
       - run: 'gem install package_cloud'
