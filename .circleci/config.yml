@@ -33,7 +33,7 @@ jobs:
       - persist_to_workspace:
           root: ~/circulate
           paths:
-            - vO.6.1/build
+            - .
   fedora:
     docker:
       - image: moul/kernel-builder:latest
