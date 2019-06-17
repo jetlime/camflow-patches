@@ -1,88 +1,110 @@
-version: 2
+version: 2.1
 jobs:
-  build:
+  prepare:
     docker:
       - image: moul/kernel-builder:latest
     working_directory: ~/circulate
     steps:
       - checkout
+      - restore_cache:
+         keys:
+           - build-{{ checksum ".circleci/config.yml" }}
       - run:
-          name: update
-          command: 'apt-get update -qq'
+          name: 'Prepare build environment...'
+          command: |
+            if [ -d "build/linux-stable" ]; then
+              echo 'Build environment was cached.'
+            else
+              echo 'Build environment was not cached.'
+              apt-get update -qq
+              apt-get install -y sudo
+              apt-get install -y uncrustify rsync build-essential cpio ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev
+              apt-get install --reinstall make
+              cd ./v0.6.1 && make prepare
+            fi
+      - save_cache:
+          key: build-{{ checksum ".circleci/config.yml" }}
+          paths:
+            - build
+      - persist_to_workspace:
+          root: .
+          paths: build
+  fedora:
+    docker:
+      - image: moul/kernel-builder:latest
+    working_directory: ~/circulate
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/circulate
+      - run: 'apt-get update -qq'
+      - run: 'apt-get install -y sudo'
+      - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
+      - run: 'apt-get install --reinstall make'
+      - run: 'cd ./v0.6.1 && make config_circle_fedora'
       - run:
-          name: install-add-apt-repository
-          command: 'apt-get -y install software-properties-common python-software-properties'
-      - run:
-          name: toolchain-r
-          command: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
-      - run:
-          name: update2
-          command: 'apt-get update'
-      - run:
-          name: build-essential
-          command: 'apt-get -y install build-essential'
-      - run:
-          name: dependencies
-          command: 'apt-get -y install rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev module-init-tools'
-      - run:
-          name: gcc-7
-          command: 'apt-get install -y gcc-7 g++-7'
-      - run:
-          name: link-gcc
-          command: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100 --slave /usr/bin/g++ g++ /usr/bin/g++-7'
-      - run:
-          name: gcc-version
-          command: 'gcc --version'
-      - run:
-          name: g++-version
-          command: 'g++ --version'
-      - run:
-          name: bison
-          command: 'apt-get install -y bison'
-      - run:
-          name: flex
-          command: 'apt-get install -y flex'
-      - run:
-          name: cpio
-          command: 'apt-get install -y cpio'
-      - run:
-          name: prepare
-          command: 'cd ./v0.6.1 && make prepare'
-      - run:
-          name: config
-          command: 'cd ./v0.6.1 && make config_circle_fedora'
-      - run:
-          name: rpm
           command: 'cd ./v0.6.1 && make rpm'
-          no_output_timeout: 3600
+          no_output_timeout: '30m'
+      - run: 'cd ./v0.6.1 && make move_rpm'
+      - persist_to_workspace:
+          root: .
+          paths:
+            - output
+  ubuntu:
+    docker:
+      - image: moul/kernel-builder:latest
+    working_directory: ~/circulate
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/circulate
+      - run: 'apt-get update -qq'
+      - run: 'apt-get install -y sudo'
+      - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
+      - run: 'apt-get install --reinstall make'
+      - run: 'cd ./v0.6.1 && make config_circle_ubuntu'
       - run:
-          name: clean
-          command: 'cd ./v0.6.1 && rm -rf build'
-      - run:
-          name: prepare_ubuntu
-          command: 'cd ./v0.6.1 && make prepare'
-      - run:
-          name: config_ubuntu
-          command: 'cd ./v0.6.1 && make config_circle_ubuntu'
-      - run:
-          name: deb
           command: 'cd ./v0.6.1 && make deb'
-          no_output_timeout: 3600
-      - run:
-          name: move
-          command: 'cd ./v0.6.1 && make move'
-      - run:
-          name: ruby
-          command: 'apt-get -y install ruby2.3 ruby2.3-dev'
-      - run:
-          name: rake
-          command: 'gem install rake'
-      - run:
-          name: package_cloud
-          command: 'gem install package_cloud'
+          no_output_timeout: '30m'
+      - run: 'cd ./v0.6.1 && make move_deb'
+      - persist_to_workspace:
+          root: .
+          paths:
+            - output
+  publish:
+    docker:
+      - image: moul/kernel-builder:latest
+    working_directory: ~/circulate
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/circulate
+      - run: 'apt-get update -qq'
+      - run: 'apt-get install -y sudo'
+      - run: 'apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev'
+      - run: 'apt-get install --reinstall make'
+      - run: 'gem install rake'
+      - run: 'gem install package_cloud'
       - deploy:
           name: publish
-          command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+          command:
               cd ./v0.6.1 && make publish
-            fi
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - prepare
+      - fedora:
+          requires:
+            - prepare
+      - ubuntu:
+          requires:
+            - prepare
+      - publish:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - fedora
+            - ubuntu

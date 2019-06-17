@@ -63,11 +63,16 @@ move_local:
 	mv -f /home/$(USER)/rpmbuild/SRPMS/*.rpm ./output
 	mv -f build/*.deb ./output
 
-move:
+move_rpm:
 	echo "Preparing packages..."
 	mkdir -p output
 	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
 	mv -f /root/rpmbuild/SRPMS/*.rpm ./output
+	cd output && ls
+
+move_deb:
+	echo "Preparing packages..."
+	mkdir -p output
 	mv -f build/*.deb ./output
 	cd output && ls
 
