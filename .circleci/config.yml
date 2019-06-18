@@ -63,7 +63,7 @@ jobs:
       - persist_to_workspace:
           root: ~/circulate
           paths:
-            - .
+            - ./v0.6.2/outputs
   ubuntu_security:
     docker:
       - image: moul/kernel-builder:latest
@@ -108,7 +108,7 @@ jobs:
       - persist_to_workspace:
           root: ~/circulate
           paths:
-            - .
+            - ./v0.6.2/output
   publish:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
