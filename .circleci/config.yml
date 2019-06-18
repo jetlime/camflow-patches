@@ -45,7 +45,7 @@ jobs:
       - run: 'cd ./v0.6.1 && make config_circle_fedora'
       - run:
           command: 'cd ./v0.6.1 && make rpm'
-          no_output_timeout: '30m'
+          no_output_timeout: '60m'
       - run: 'cd ./v0.6.1 && make move_rpm'
       - persist_to_workspace:
           root: ~/circulate
@@ -71,7 +71,7 @@ jobs:
       - run: 'cd ./v0.6.1 && make config_circle_ubuntu'
       - run:
           command: 'cd ./v0.6.1 && make deb'
-          no_output_timeout: '30m'
+          no_output_timeout: '90m'
       - run: 'cd ./v0.6.1 && make move_deb'
       - persist_to_workspace:
           root: ~/circulate
