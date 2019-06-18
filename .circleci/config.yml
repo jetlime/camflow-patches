@@ -31,6 +31,19 @@ jobs:
           root: ~/circulate
           paths:
             - .
+  fedora_security:
+    docker:
+      - image: kernelci/build-gcc-8_x86:latest
+    working_directory: ~/circulate
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/circulate
+      - run: 'apt-get update -qq'
+      - run: 'apt-get install -y sudo rpm cpio'
+      - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc pkg-config zsh libelf-dev bison flex'
+      - run: 'cd ./v0.6.1 && make config_circle_fedora'
+      - run: 'cd ./v0.6.1 && make compile_security'
   fedora:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
@@ -51,6 +64,25 @@ jobs:
           root: ~/circulate
           paths:
             - .
+  ubuntu_security:
+    docker:
+      - image: moul/kernel-builder:latest
+    working_directory: ~/circulate
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/circulate
+      - run: 'apt-get update -qq'
+      - run: 'apt-get install -y software-properties-common python-software-properties'
+      - run: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
+      - run: 'apt-get update -qq'
+      - run: 'apt-get install -y build-essential'
+      - run: 'apt-get install -y rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev module-init-tools'
+      - run: 'apt-get install -y gcc-7 g++-7'
+      - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100 --slave /usr/bin/g++ g++ /usr/bin/g++-7'
+      - run: 'apt-get install -y bison flex cpio'
+      - run: 'cd ./v0.6.1 && make config_circle_ubuntu'
+      - run: 'cd ./v0.6.1 && make compile_security'
   ubuntu:
     docker:
       - image: moul/kernel-builder:latest
@@ -100,12 +132,18 @@ workflows:
   build-and-deploy:
     jobs:
       - checkout
+      - fedora_security:
+          requires:
+            - checkout
       - fedora:
+          requires:
+            - fedora_security
+      - ubuntu_security:
           requires:
             - checkout
       - ubuntu:
           requires:
-            - checkout
+            - ubuntu_security
       - publish:
           filters:
             branches:

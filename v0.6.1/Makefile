@@ -44,6 +44,9 @@ config_circle_ubuntu:
 	cd ./build/linux-stable && $(MAKE) olddefconfig
 	cd ./build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
 
+compile_security:
+	cd ./build/linux-stable && $(MAKE) security W=1
+
 compile:
 	cd ./build/linux-stable && $(MAKE) -j16
 	cd ./build/linux-stable && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
