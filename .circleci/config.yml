@@ -60,6 +60,8 @@ jobs:
           command: 'cd ./v0.6.2 && make rpm'
           no_output_timeout: '60m'
       - run: 'cd ./v0.6.2 && make move_rpm'
+      - run: 'cd ~/circulate'
+      - run: 'ls'
       - persist_to_workspace:
           root: ~/circulate
           paths:
@@ -105,6 +107,8 @@ jobs:
           command: 'cd ./v0.6.2 && make deb'
           no_output_timeout: '90m'
       - run: 'cd ./v0.6.2 && make move_deb'
+      - run: 'cd ~/circulate'
+      - run: 'ls'
       - persist_to_workspace:
           root: ~/circulate
           paths:
