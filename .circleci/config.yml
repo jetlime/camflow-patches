@@ -60,10 +60,13 @@ jobs:
           command: 'cd ./v0.6.2 && make rpm'
           no_output_timeout: '60m'
       - run: 'cd ./v0.6.2 && make move_rpm'
+      - run: 'ls'
+      - run: 'cd ~/circulate/v0.6.2  && ls'
+      - run: 'cd ~/circulate/v0.6.2/output && ls'
       - persist_to_workspace:
           root: ~/circulate
           paths:
-            - ./v0.6.2/outputs
+            - ./v0.6.2/output
   ubuntu_security:
     docker:
       - image: moul/kernel-builder:latest
@@ -105,6 +108,9 @@ jobs:
           command: 'cd ./v0.6.2 && make deb'
           no_output_timeout: '90m'
       - run: 'cd ./v0.6.2 && make move_deb'
+      - run: 'ls'
+      - run: 'cd ~/circulate/v0.6.2 && ls'
+      - run: 'cd ~/circulate/v0.6.2/output && ls'
       - persist_to_workspace:
           root: ~/circulate
           paths:
