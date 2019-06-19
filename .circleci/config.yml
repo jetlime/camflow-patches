@@ -128,6 +128,7 @@ jobs:
       - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc pkg-config zsh libelf-dev bison flex'
       - run: 'apt-get install --reinstall make'
       - run: 'apt-get install -y ruby ruby-dev'
+      - run: 'apt-get install -y rename'
       - run: 'gem install rake'
       - run: 'gem install package_cloud'
       - deploy:
