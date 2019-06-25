@@ -82,7 +82,7 @@ jobs:
       - run: 'apt-get install -y build-essential'
       - run: 'apt-get install -y rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev module-init-tools'
       - run: 'apt-get install -y gcc-8 g++-8'
-      - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100 --slave /usr/bin/g++ g++ /usr/bin/g++-7'
+      - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8'
       - run: 'apt-get install -y bison flex cpio'
       - run: 'cd ./v0.6.2 && make config_circle_ubuntu'
       - run: 'cd ./v0.6.2 && make compile_security'
@@ -101,7 +101,7 @@ jobs:
       - run: 'apt-get install -y build-essential'
       - run: 'apt-get install -y rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev module-init-tools'
       - run: 'apt-get install -y gcc-8 g++-8'
-      - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100 --slave /usr/bin/g++ g++ /usr/bin/g++-7'
+      - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8'
       - run: 'apt-get install -y bison flex cpio'
       - run: 'cd ./v0.6.2 && make config_circle_ubuntu'
       - run:
