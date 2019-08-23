@@ -75,7 +75,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/circulate
-      - run: 'apt-get update -qq --allow-releaseinfo-change'
+      - run: 'apt-get update -qq'
       - run: 'apt-get install -y software-properties-common python-software-properties'
       - run: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
       - run: 'apt-get update -qq --allow-releaseinfo-change'
@@ -94,7 +94,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/circulate
-      - run: 'apt-get update -qq --allow-releaseinfo-change'
+      - run: 'apt-get update -qq'
       - run: 'apt-get install -y software-properties-common python-software-properties'
       - run: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
       - run: 'apt-get update -qq --allow-releaseinfo-change'
