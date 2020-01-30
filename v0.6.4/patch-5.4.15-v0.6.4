@@ -1,6 +1,6 @@
 diff -uprN -b -B ./pristine/linux-stable/fs/splice.c ./linux-stable/fs/splice.c
---- ./pristine/linux-stable/fs/splice.c	2020-01-30 09:21:24.280620756 -0500
-+++ ./linux-stable/fs/splice.c	2020-01-30 09:22:30.527996034 -0500
+--- ./pristine/linux-stable/fs/splice.c	2020-01-30 14:09:45.891551584 -0500
++++ ./linux-stable/fs/splice.c	2020-01-30 14:11:02.316897751 -0500
 @@ -1121,6 +1121,12 @@ static long do_splice(struct file *in, l
  		if (ipipe == opipe)
  			return -EINVAL;
@@ -54,8 +54,8 @@ diff -uprN -b -B ./pristine/linux-stable/fs/splice.c ./linux-stable/fs/splice.c
  			flags |= SPLICE_F_NONBLOCK;
  
 diff -uprN -b -B ./pristine/linux-stable/include/linux/fs.h ./linux-stable/include/linux/fs.h
---- ./pristine/linux-stable/include/linux/fs.h	2020-01-30 09:21:24.401621441 -0500
-+++ ./linux-stable/include/linux/fs.h	2020-01-30 09:26:14.213263146 -0500
+--- ./pristine/linux-stable/include/linux/fs.h	2020-01-30 14:09:46.088552476 -0500
++++ ./linux-stable/include/linux/fs.h	2020-01-30 14:12:55.443411816 -0500
 @@ -1441,6 +1441,9 @@ struct super_block {
  	atomic_t		s_active;
  #ifdef CONFIG_SECURITY
@@ -67,8 +67,8 @@ diff -uprN -b -B ./pristine/linux-stable/include/linux/fs.h ./linux-stable/inclu
  	const struct xattr_handler **s_xattr;
  #ifdef CONFIG_FS_ENCRYPTION
 diff -uprN -b -B ./pristine/linux-stable/include/linux/lsm_hooks.h ./linux-stable/include/linux/lsm_hooks.h
---- ./pristine/linux-stable/include/linux/lsm_hooks.h	2020-01-30 09:21:24.417621532 -0500
-+++ ./linux-stable/include/linux/lsm_hooks.h	2020-01-30 09:22:30.530996051 -0500
+--- ./pristine/linux-stable/include/linux/lsm_hooks.h	2020-01-30 14:09:46.106552558 -0500
++++ ./linux-stable/include/linux/lsm_hooks.h	2020-01-30 14:11:02.321897774 -0500
 @@ -1807,6 +1807,23 @@ union security_list_options {
  	void (*audit_rule_free)(void *lsmrule);
  #endif /* CONFIG_AUDIT */
@@ -111,7 +111,7 @@ diff -uprN -b -B ./pristine/linux-stable/include/linux/lsm_hooks.h ./linux-stabl
  	struct hlist_head bpf_map;
 diff -uprN -b -B ./pristine/linux-stable/include/linux/provenance_query.h ./linux-stable/include/linux/provenance_query.h
 --- ./pristine/linux-stable/include/linux/provenance_query.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/include/linux/provenance_query.h	2020-01-30 09:26:14.213263146 -0500
++++ ./linux-stable/include/linux/provenance_query.h	2020-01-30 14:12:55.444411822 -0500
 @@ -0,0 +1,37 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -152,7 +152,7 @@ diff -uprN -b -B ./pristine/linux-stable/include/linux/provenance_query.h ./linu
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/include/linux/provenance_types.h ./linux-stable/include/linux/provenance_types.h
 --- ./pristine/linux-stable/include/linux/provenance_types.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/include/linux/provenance_types.h	2020-01-30 09:26:14.213263146 -0500
++++ ./linux-stable/include/linux/provenance_types.h	2020-01-30 14:12:55.444411822 -0500
 @@ -0,0 +1,27 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -182,8 +182,8 @@ diff -uprN -b -B ./pristine/linux-stable/include/linux/provenance_types.h ./linu
 +
 +#endif /* _PROVENANCE_TYPES_H */
 diff -uprN -b -B ./pristine/linux-stable/include/linux/security.h ./linux-stable/include/linux/security.h
---- ./pristine/linux-stable/include/linux/security.h	2020-01-30 09:21:24.477621872 -0500
-+++ ./linux-stable/include/linux/security.h	2020-01-30 09:22:30.531996056 -0500
+--- ./pristine/linux-stable/include/linux/security.h	2020-01-30 14:09:46.181552897 -0500
++++ ./linux-stable/include/linux/security.h	2020-01-30 14:11:02.322897778 -0500
 @@ -443,6 +443,20 @@ int security_inode_notifysecctx(struct i
  int security_inode_setsecctx(struct dentry *dentry, void *ctx, u32 ctxlen);
  int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen);
@@ -255,8 +255,8 @@ diff -uprN -b -B ./pristine/linux-stable/include/linux/security.h ./linux-stable
 +
 +#endif /* ! __LINUX_SECURITY_H */
 diff -uprN -b -B ./pristine/linux-stable/include/net/sock.h ./linux-stable/include/net/sock.h
---- ./pristine/linux-stable/include/net/sock.h	2020-01-30 09:21:24.593622529 -0500
-+++ ./linux-stable/include/net/sock.h	2020-01-30 09:26:14.213263146 -0500
+--- ./pristine/linux-stable/include/net/sock.h	2020-01-30 14:09:46.428554016 -0500
++++ ./linux-stable/include/net/sock.h	2020-01-30 14:12:55.444411822 -0500
 @@ -491,6 +491,9 @@ struct sock {
  	void			*sk_user_data;
  #ifdef CONFIG_SECURITY
@@ -269,9 +269,9 @@ diff -uprN -b -B ./pristine/linux-stable/include/net/sock.h ./linux-stable/inclu
  	struct mem_cgroup	*sk_memcg;
 diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_fs.h ./linux-stable/include/uapi/linux/provenance_fs.h
 --- ./pristine/linux-stable/include/uapi/linux/provenance_fs.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/include/uapi/linux/provenance_fs.h	2020-01-30 09:26:14.213263146 -0500
++++ ./linux-stable/include/uapi/linux/provenance_fs.h	2020-01-30 14:12:55.444411822 -0500
 @@ -0,0 +1,124 @@
-+// SPDX-License-Identifier: GPL-2.0-only
++// SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note
 +/*
 + * Copyright (C) 2015-2016 University of Cambridge,
 + * Copyright (C) 2016-2017 Harvard University,
@@ -397,9 +397,9 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_fs.h ./li
 + #endif
 diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance.h ./linux-stable/include/uapi/linux/provenance.h
 --- ./pristine/linux-stable/include/uapi/linux/provenance.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/include/uapi/linux/provenance.h	2020-01-30 09:26:14.213263146 -0500
++++ ./linux-stable/include/uapi/linux/provenance.h	2020-01-30 14:12:55.445411827 -0500
 @@ -0,0 +1,341 @@
-+// SPDX-License-Identifier: GPL-2.0-only
++// SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note
 +/*
 + * Copyright (C) 2015-2016 University of Cambridge,
 + * Copyright (C) 2016-2017 Harvard University,
@@ -435,7 +435,7 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance.h ./linux
 +	"."xstr (CAMFLOW_VERSION_MINOR)					\
 +	"."xstr (CAMFLOW_VERSION_PATCH)					\
 +
-+#define CAMFLOW_COMMIT "d4590a58333fb26175fab9a0c23a7057296fc672"
++#define CAMFLOW_COMMIT "f2ba7be457375ce8af3b4c6dc92b77ebe5439a38"
 +
 +#define PROVENANCE_HASH                 "sha256"
 +
@@ -742,9 +742,9 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance.h ./linux
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_types.h ./linux-stable/include/uapi/linux/provenance_types.h
 --- ./pristine/linux-stable/include/uapi/linux/provenance_types.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/include/uapi/linux/provenance_types.h	2020-01-30 09:26:14.213263146 -0500
++++ ./linux-stable/include/uapi/linux/provenance_types.h	2020-01-30 14:12:55.444411822 -0500
 @@ -0,0 +1,294 @@
-+// SPDX-License-Identifier: GPL-2.0-only
++// SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note
 +/*
 + * Copyright (C) 2015-2016 University of Cambridge,
 + * Copyright (C) 2016-2017 Harvard University,
@@ -1040,9 +1040,9 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_types.h .
 +#endif // _UAPI_LINUX_PROVENANCE_TYPES_H
 diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_utils.h ./linux-stable/include/uapi/linux/provenance_utils.h
 --- ./pristine/linux-stable/include/uapi/linux/provenance_utils.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/include/uapi/linux/provenance_utils.h	2020-01-30 09:26:14.213263146 -0500
++++ ./linux-stable/include/uapi/linux/provenance_utils.h	2020-01-30 14:12:55.444411822 -0500
 @@ -0,0 +1,97 @@
-+// SPDX-License-Identifier: GPL-2.0-only
++// SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note
 +/*
 + * Copyright (C) 2015-2016 University of Cambridge,
 + * Copyright (C) 2016-2017 Harvard University,
@@ -1140,8 +1140,8 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_utils.h .
 +}
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/xattr.h ./linux-stable/include/uapi/linux/xattr.h
---- ./pristine/linux-stable/include/uapi/linux/xattr.h	2020-01-30 09:21:24.648622841 -0500
-+++ ./linux-stable/include/uapi/linux/xattr.h	2020-01-30 09:26:14.213263146 -0500
+--- ./pristine/linux-stable/include/uapi/linux/xattr.h	2020-01-30 14:09:46.500554342 -0500
++++ ./linux-stable/include/uapi/linux/xattr.h	2020-01-30 14:12:55.445411827 -0500
 @@ -53,6 +53,9 @@
  #define XATTR_SELINUX_SUFFIX "selinux"
  #define XATTR_NAME_SELINUX XATTR_SECURITY_PREFIX XATTR_SELINUX_SUFFIX
@@ -1153,8 +1153,8 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/xattr.h ./linux-stab
  #define XATTR_SMACK_IPIN "SMACK64IPIN"
  #define XATTR_SMACK_IPOUT "SMACK64IPOUT"
 diff -uprN -b -B ./pristine/linux-stable/ipc/mqueue.c ./linux-stable/ipc/mqueue.c
---- ./pristine/linux-stable/ipc/mqueue.c	2020-01-30 09:21:24.700623135 -0500
-+++ ./linux-stable/ipc/mqueue.c	2020-01-30 09:22:30.531996056 -0500
+--- ./pristine/linux-stable/ipc/mqueue.c	2020-01-30 14:09:46.508554379 -0500
++++ ./linux-stable/ipc/mqueue.c	2020-01-30 14:11:02.335897837 -0500
 @@ -1019,6 +1019,11 @@ static int do_mq_timedsend(mqd_t mqdes,
  	msg_ptr->m_ts = msg_len;
  	msg_ptr->m_type = msg_prio;
@@ -1182,8 +1182,8 @@ diff -uprN -b -B ./pristine/linux-stable/ipc/mqueue.c ./linux-stable/ipc/mqueue.
  
  		if ((u_msg_prio && put_user(msg_ptr->m_type, u_msg_prio)) ||
 diff -uprN -b -B ./pristine/linux-stable/ipc/shm.c ./linux-stable/ipc/shm.c
---- ./pristine/linux-stable/ipc/shm.c	2020-01-30 09:21:24.700623135 -0500
-+++ ./linux-stable/ipc/shm.c	2020-01-30 09:22:30.533996068 -0500
+--- ./pristine/linux-stable/ipc/shm.c	2020-01-30 14:09:46.508554379 -0500
++++ ./linux-stable/ipc/shm.c	2020-01-30 14:11:02.335897837 -0500
 @@ -340,6 +340,14 @@ static void shm_close(struct vm_area_str
  	ipc_update_pid(&shp->shm_lprid, task_tgid(current));
  	shp->shm_dtim = ktime_get_real_seconds();
@@ -1200,8 +1200,8 @@ diff -uprN -b -B ./pristine/linux-stable/ipc/shm.c ./linux-stable/ipc/shm.c
  		shm_destroy(ns, shp);
  	else
 diff -uprN -b -B ./pristine/linux-stable/Makefile ./linux-stable/Makefile
---- ./pristine/linux-stable/Makefile	2020-01-30 09:21:18.791589660 -0500
-+++ ./linux-stable/Makefile	2020-01-30 09:21:25.495627638 -0500
+--- ./pristine/linux-stable/Makefile	2020-01-30 14:09:42.203534879 -0500
++++ ./linux-stable/Makefile	2020-01-30 14:09:47.420558510 -0500
 @@ -2,7 +2,7 @@
  VERSION = 5
  PATCHLEVEL = 4
@@ -1212,8 +1212,8 @@ diff -uprN -b -B ./pristine/linux-stable/Makefile ./linux-stable/Makefile
  
  # *DOCUMENTATION*
 diff -uprN -b -B ./pristine/linux-stable/mm/mmap.c ./linux-stable/mm/mmap.c
---- ./pristine/linux-stable/mm/mmap.c	2020-01-30 09:21:24.788623633 -0500
-+++ ./linux-stable/mm/mmap.c	2020-01-30 09:22:30.534996074 -0500
+--- ./pristine/linux-stable/mm/mmap.c	2020-01-30 14:09:46.596554777 -0500
++++ ./linux-stable/mm/mmap.c	2020-01-30 14:11:02.336897842 -0500
 @@ -2791,6 +2791,13 @@ int __do_munmap(struct mm_struct *mm, un
  		prev = vma;
  	}
@@ -1229,8 +1229,8 @@ diff -uprN -b -B ./pristine/linux-stable/mm/mmap.c ./linux-stable/mm/mmap.c
  	last = find_vma(mm, end);
  	if (last && end > last->vm_start) {
 diff -uprN -b -B ./pristine/linux-stable/net/socket.c ./linux-stable/net/socket.c
---- ./pristine/linux-stable/net/socket.c	2020-01-30 09:21:24.912624336 -0500
-+++ ./linux-stable/net/socket.c	2020-01-30 09:22:30.534996074 -0500
+--- ./pristine/linux-stable/net/socket.c	2020-01-30 14:09:46.749555470 -0500
++++ ./linux-stable/net/socket.c	2020-01-30 14:11:02.337897846 -0500
 @@ -634,9 +634,18 @@ INDIRECT_CALLABLE_DECLARE(int inet6_send
  					    size_t));
  static inline int sock_sendmsg_nosec(struct socket *sock, struct msghdr *msg)
@@ -1263,8 +1263,8 @@ diff -uprN -b -B ./pristine/linux-stable/net/socket.c ./linux-stable/net/socket.
  				  inet_recvmsg, sock, msg, msg_data_left(msg),
  				  flags);
 diff -uprN -b -B ./pristine/linux-stable/security/Kconfig ./linux-stable/security/Kconfig
---- ./pristine/linux-stable/security/Kconfig	2020-01-30 09:21:24.956624585 -0500
-+++ ./linux-stable/security/Kconfig	2020-01-30 09:26:14.210263129 -0500
+--- ./pristine/linux-stable/security/Kconfig	2020-01-30 14:09:46.828555828 -0500
++++ ./linux-stable/security/Kconfig	2020-01-30 14:12:55.434411768 -0500
 @@ -230,6 +230,14 @@ config STATIC_USERMODEHELPER_PATH
  	  If you wish for all usermode helper programs to be disabled,
  	  specify an empty string here (i.e. "").
@@ -1306,8 +1306,8 @@ diff -uprN -b -B ./pristine/linux-stable/security/Kconfig ./linux-stable/securit
  	  A comma-separated list of LSMs, in initialization order.
  	  Any LSMs left off this list will be ignored. This can be
 diff -uprN -b -B ./pristine/linux-stable/security/Makefile ./linux-stable/security/Makefile
---- ./pristine/linux-stable/security/Makefile	2020-01-30 09:21:24.956624585 -0500
-+++ ./linux-stable/security/Makefile	2020-01-30 09:26:14.211263135 -0500
+--- ./pristine/linux-stable/security/Makefile	2020-01-30 14:09:46.828555828 -0500
++++ ./linux-stable/security/Makefile	2020-01-30 14:12:55.434411768 -0500
 @@ -9,6 +9,7 @@ subdir-$(CONFIG_SECURITY_SMACK)		+= smac
  subdir-$(CONFIG_SECURITY_TOMOYO)        += tomoyo
  subdir-$(CONFIG_SECURITY_APPARMOR)	+= apparmor
@@ -1326,7 +1326,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/Makefile ./linux-stable/securi
  obj-$(CONFIG_SECURITY_LOCKDOWN_LSM)	+= lockdown/
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/fs.c ./linux-stable/security/provenance/fs.c
 --- ./pristine/linux-stable/security/provenance/fs.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/fs.c	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/fs.c	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,1005 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -2335,7 +2335,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/fs.c ./linux-stable
 +fs_initcall(init_prov_fs);
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/hooks.c ./linux-stable/security/provenance/hooks.c
 --- ./pristine/linux-stable/security/provenance/hooks.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/hooks.c	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/hooks.c	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,2706 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -5045,7 +5045,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/hooks.c ./linux-sta
 +};
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/memcpy_ss.h ./linux-stable/security/provenance/include/memcpy_ss.h
 --- ./pristine/linux-stable/security/provenance/include/memcpy_ss.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/memcpy_ss.h	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/include/memcpy_ss.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,17 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -5066,7 +5066,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/memcpy_ss.h
 +#endif // _MEMCPY_SS
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_filter.h ./linux-stable/security/provenance/include/provenance_filter.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_filter.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_filter.h	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/include/provenance_filter.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,272 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -5342,7 +5342,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance.h ./linux-stable/security/provenance/include/provenance.h
 --- ./pristine/linux-stable/security/provenance/include/provenance.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance.h	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/include/provenance.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,256 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -5602,7 +5602,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance.
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_inode.h ./linux-stable/security/provenance/include/provenance_inode.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_inode.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_inode.h	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/include/provenance_inode.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,527 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -6133,7 +6133,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_machine.h ./linux-stable/security/provenance/include/provenance_machine.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_machine.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_machine.h	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/include/provenance_machine.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,21 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -6158,7 +6158,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_net.h ./linux-stable/security/provenance/include/provenance_net.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_net.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_net.h	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/include/provenance_net.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,371 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -6533,7 +6533,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_ns.h ./linux-stable/security/provenance/include/provenance_ns.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_ns.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_ns.h	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/include/provenance_ns.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,122 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -6659,7 +6659,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_policy.h ./linux-stable/security/provenance/include/provenance_policy.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_policy.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_policy.h	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/include/provenance_policy.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,40 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -6703,7 +6703,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_query.h ./linux-stable/security/provenance/include/provenance_query.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_query.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_query.h	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/include/provenance_query.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,89 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -6796,7 +6796,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_record.h ./linux-stable/security/provenance/include/provenance_record.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_record.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_record.h	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/include/provenance_record.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,505 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -7305,7 +7305,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_relay.h ./linux-stable/security/provenance/include/provenance_relay.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_relay.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_relay.h	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/include/provenance_relay.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,167 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -7476,7 +7476,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_task.h ./linux-stable/security/provenance/include/provenance_task.h
 --- ./pristine/linux-stable/security/provenance/include/provenance_task.h	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/include/provenance_task.h	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/include/provenance_task.h	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,611 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -8091,7 +8091,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +#endif
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/Kconfig ./linux-stable/security/provenance/Kconfig
 --- ./pristine/linux-stable/security/provenance/Kconfig	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/Kconfig	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/Kconfig	2020-01-30 14:12:55.436411779 -0500
 @@ -0,0 +1,32 @@
 +config SECURITY_PROVENANCE
 +         bool "CamFlow - Provenance"
@@ -8127,7 +8127,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/Kconfig ./linux-sta
 +	  If you are unsure how to answer this question, answer N.
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/machine.c ./linux-stable/security/provenance/machine.c
 --- ./pristine/linux-stable/security/provenance/machine.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/machine.c	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/machine.c	2020-01-30 14:12:55.437411784 -0500
 @@ -0,0 +1,44 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -8175,7 +8175,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/machine.c ./linux-s
 +}
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/Makefile ./linux-stable/security/provenance/Makefile
 --- ./pristine/linux-stable/security/provenance/Makefile	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/Makefile	2020-01-30 09:26:14.211263135 -0500
++++ ./linux-stable/security/provenance/Makefile	2020-01-30 14:12:55.436411779 -0500
 @@ -0,0 +1,8 @@
 +#
 +# Makefile for Provenance LSM
@@ -8187,7 +8187,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/Makefile ./linux-st
 +ccflags-y := -I$(srctree)/security/provenance/include
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/memcpy_ss.c ./linux-stable/security/provenance/memcpy_ss.c
 --- ./pristine/linux-stable/security/provenance/memcpy_ss.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/memcpy_ss.c	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/memcpy_ss.c	2020-01-30 14:12:55.438411789 -0500
 @@ -0,0 +1,65 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -8256,7 +8256,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/memcpy_ss.c ./linux
 +}
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/netfilter.c ./linux-stable/security/provenance/netfilter.c
 --- ./pristine/linux-stable/security/provenance/netfilter.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/netfilter.c	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/netfilter.c	2020-01-30 14:12:55.438411789 -0500
 @@ -0,0 +1,112 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -8372,7 +8372,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/netfilter.c ./linux
 +module_exit(provenance_nf_ip_exit);
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/propagate.c ./linux-stable/security/provenance/propagate.c
 --- ./pristine/linux-stable/security/provenance/propagate.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/propagate.c	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/propagate.c	2020-01-30 14:12:55.438411789 -0500
 @@ -0,0 +1,43 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -8419,7 +8419,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/propagate.c ./linux
 +}
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/query.c ./linux-stable/security/provenance/query.c
 --- ./pristine/linux-stable/security/provenance/query.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/query.c	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/query.c	2020-01-30 14:12:55.438411789 -0500
 @@ -0,0 +1,49 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -8472,7 +8472,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/query.c ./linux-sta
 +EXPORT_SYMBOL_GPL(unregister_provenance_query_hooks);
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/relay.c ./linux-stable/security/provenance/relay.c
 --- ./pristine/linux-stable/security/provenance/relay.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/relay.c	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/relay.c	2020-01-30 14:12:55.438411789 -0500
 @@ -0,0 +1,398 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -8874,7 +8874,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/relay.c ./linux-sta
 +fs_initcall(relay_prov_init);
 diff -uprN -b -B ./pristine/linux-stable/security/provenance/type.c ./linux-stable/security/provenance/type.c
 --- ./pristine/linux-stable/security/provenance/type.c	1969-12-31 19:00:00.000000000 -0500
-+++ ./linux-stable/security/provenance/type.c	2020-01-30 09:26:14.212263140 -0500
++++ ./linux-stable/security/provenance/type.c	2020-01-30 14:12:55.438411789 -0500
 @@ -0,0 +1,585 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -9462,8 +9462,8 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/type.c ./linux-stab
 +}
 +EXPORT_SYMBOL_GPL(node_id);
 diff -uprN -b -B ./pristine/linux-stable/security/security.c ./linux-stable/security/security.c
---- ./pristine/linux-stable/security/security.c	2020-01-30 09:21:24.961624613 -0500
-+++ ./linux-stable/security/security.c	2020-01-30 09:22:30.535996079 -0500
+--- ./pristine/linux-stable/security/security.c	2020-01-30 14:09:46.840555883 -0500
++++ ./linux-stable/security/security.c	2020-01-30 14:11:02.339897855 -0500
 @@ -2368,6 +2368,49 @@ int security_audit_rule_match(u32 secid,
  }
  #endif /* CONFIG_AUDIT */
