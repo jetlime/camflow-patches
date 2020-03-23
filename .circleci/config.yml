@@ -20,7 +20,7 @@ jobs:
               apt-get install -y sudo rpm cpio
               apt-get install -y uncrustify rsync build-essential ruby python autoconf automake libtool libncurses5-dev libncursesw5-dev bc libssl-dev pkg-config zsh libelf-dev bison flex sqlite3 libsqlite3-dev
               apt-get install --reinstall make
-              cd ./v0.6.4
+              cd ./v0.6.5
               make prepare
             fi
       - save_cache:
@@ -42,8 +42,8 @@ jobs:
       - run: 'apt-get update -qq --allow-releaseinfo-change'
       - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc pkg-config zsh libelf-dev bison flex'
-      - run: 'cd ./v0.6.4 && make config_circle_fedora'
-      - run: 'cd ./v0.6.4 && make compile_security'
+      - run: 'cd ./v0.6.5 && make config_circle_fedora'
+      - run: 'cd ./v0.6.5 && make compile_security'
   fedora:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
@@ -55,18 +55,18 @@ jobs:
       - run: 'apt-get update -qq --allow-releaseinfo-change'
       - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc pkg-config zsh libelf-dev bison flex'
-      - run: 'cd ./v0.6.4 && make config_circle_fedora'
+      - run: 'cd ./v0.6.5 && make config_circle_fedora'
       - run:
-          command: 'cd ./v0.6.4 && make rpm'
+          command: 'cd ./v0.6.5 && make rpm'
           no_output_timeout: '60m'
-      - run: 'cd ./v0.6.4 && make move_rpm'
+      - run: 'cd ./v0.6.5 && make move_rpm'
       - run: 'ls'
-      - run: 'cd ~/circulate/v0.6.4  && ls'
-      - run: 'cd ~/circulate/v0.6.4/output && ls'
+      - run: 'cd ~/circulate/v0.6.5  && ls'
+      - run: 'cd ~/circulate/v0.6.5/output && ls'
       - persist_to_workspace:
           root: ~/circulate
           paths:
-            - ./v0.6.4/output
+            - ./v0.6.5/output
   ubuntu_security:
     docker:
       - image: moul/kernel-builder:latest
@@ -84,8 +84,8 @@ jobs:
       - run: 'apt-get install -y gcc-8 g++-8'
       - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8'
       - run: 'apt-get install -y bison flex cpio'
-      - run: 'cd ./v0.6.4 && make config_circle_ubuntu'
-      - run: 'cd ./v0.6.4 && make compile_security'
+      - run: 'cd ./v0.6.5 && make config_circle_ubuntu'
+      - run: 'cd ./v0.6.5 && make compile_security'
   ubuntu:
     docker:
       - image: moul/kernel-builder:latest
@@ -103,18 +103,18 @@ jobs:
       - run: 'apt-get install -y gcc-8 g++-8'
       - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8'
       - run: 'apt-get install -y bison flex cpio'
-      - run: 'cd ./v0.6.4 && make config_circle_ubuntu'
+      - run: 'cd ./v0.6.5 && make config_circle_ubuntu'
       - run:
-          command: 'cd ./v0.6.4 && make deb'
+          command: 'cd ./v0.6.5 && make deb'
           no_output_timeout: '90m'
-      - run: 'cd ./v0.6.4 && make move_deb'
+      - run: 'cd ./v0.6.5 && make move_deb'
       - run: 'ls'
-      - run: 'cd ~/circulate/v0.6.4 && ls'
-      - run: 'cd ~/circulate/v0.6.4/output && ls'
+      - run: 'cd ~/circulate/v0.6.5 && ls'
+      - run: 'cd ~/circulate/v0.6.5/output && ls'
       - persist_to_workspace:
           root: ~/circulate
           paths:
-            - ./v0.6.4/output
+            - ./v0.6.5/output
   publish:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
@@ -134,7 +134,7 @@ jobs:
       - deploy:
           name: publish
           command:
-              cd ./v0.6.4 && make publish
+              cd ./v0.6.5 && make publish
 workflows:
   version: 2
   build-and-deploy:
