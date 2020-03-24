@@ -83,10 +83,10 @@ publish:
 	cd ./output && ls
 	cd ./output && rename -v -f 's/$(lsm-version)\+-[1-9]/$(lsm-version)/gi' *.rpm
 	cd ./output && ls
-	cd ./output && package_cloud push camflow/provenance/fedora/29 kernel-headers-$(kernel-version)camflow$(lsm-version).x86_64.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/29 kernel-$(kernel-version)camflow$(lsm-version).x86_64.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/29 kernel-$(kernel-version)camflow$(lsm-version).src.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/29 kernel-devel-$(kernel-version)camflow$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/31 kernel-headers-$(kernel-version)camflow$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/31 kernel-$(kernel-version)camflow$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/31 kernel-$(kernel-version)camflow$(lsm-version).src.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/31 kernel-devel-$(kernel-version)camflow$(lsm-version).x86_64.rpm
 	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-headers-$(kernel-version)camflow$(lsm-version)+_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
 	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-image-$(kernel-version)camflow$(lsm-version)+-dbg_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
 	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-image-$(kernel-version)camflow$(lsm-version)+_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
