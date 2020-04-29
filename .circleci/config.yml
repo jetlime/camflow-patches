@@ -17,6 +17,7 @@ jobs:
             else
               echo 'Build environment was not cached.'
               apt-get update -qq --allow-releaseinfo-change
+              apt-get install patch
               apt-get install --reinstall make
               make prepare
             fi
