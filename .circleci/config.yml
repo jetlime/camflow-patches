@@ -149,9 +149,8 @@ workflows:
             - ubuntu_security
       - publish:
           filters:
-            branches:
-              only:
-                - master
+            tags:
+              only: /^v.*/
           requires:
             - fedora
             - ubuntu
