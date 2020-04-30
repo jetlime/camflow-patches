@@ -22,7 +22,7 @@ jobs:
               make prepare
             fi
       - save_cache:
-          key: build-{{ checksum ".circleci/config.yml" }}
+          key: build-again-{{ checksum ".circleci/config.yml" }}
           paths:
             - build
       - persist_to_workspace:
