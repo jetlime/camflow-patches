@@ -1,5 +1,5 @@
-kernel-version=5.5.11
-lsm-version=0.6.5
+kernel-version=5.6.7
+lsm-version=0.6.6
 arch=x86_64
 
 prepare:
