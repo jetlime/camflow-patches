@@ -24,6 +24,8 @@ config:
 	cd ./build/linux-stable && $(MAKE) menuconfig
 	cd ./build/linux-stable && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
 	cd ./build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
+	cd ./build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO=n/CONFIG_DEBUG_INFO=y/g" .config
+	cd ./build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO_BTF=n/CONFIG_DEBUG_INFO_BTF=y/g" .config
 
 config_small:
 	test -f /boot/config-$(shell uname -r) && $(MAKE) config_def || $(MAKE) config_pi
@@ -32,6 +34,8 @@ config_small:
 	cd ./build/linux-stable &&  mv config_strip .config
 	cd ./build/linux-stable && $(MAKE) menuconfig
 	cd ./build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
+	cd ./build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO=n/CONFIG_DEBUG_INFO=y/g" .config
+	cd ./build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO_BTF=n/CONFIG_DEBUG_INFO_BTF=y/g" .config
 
 config_travis:
 	cd ./build/linux-stable && cp ../../.config_fedora .config
