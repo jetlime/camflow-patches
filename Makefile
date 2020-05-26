@@ -8,13 +8,6 @@ prepare:
 	cd ./build/linux-stable && $(MAKE) mrproper
 	cd ./build/linux-stable && patch -p2 < ../../patch-$(kernel-version)-v$(lsm-version)
 
-config_small:
-	cd ./build/linux-stable && ./scripts/kconfig/streamline_config.pl > config_strip
-	cd ./build/linux-stable &&  mv .config config_sav
-	cd ./build/linux-stable &&  mv config_strip .config
-	cd ./build/linux-stable && $(MAKE) menuconfig
-	cd ./build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
-
 config_def:
 	echo "Default method to retrieve configuration"
 	cd ./build/linux-stable && cp -f /boot/config-$(shell uname -r) .config
@@ -30,6 +23,14 @@ config:
 	cd ./build/linux-stable && $(MAKE) olddefconfig
 	cd ./build/linux-stable && $(MAKE) menuconfig
 	cd ./build/linux-stable && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
+	cd ./build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
+
+config_small:
+	test -f /boot/config-$(shell uname -r) && $(MAKE) config_def || $(MAKE) config_pi
+	cd ./build/linux-stable && ./scripts/kconfig/streamline_config.pl > config_strip
+	cd ./build/linux-stable &&  mv .config config_sav
+	cd ./build/linux-stable &&  mv config_strip .config
+	cd ./build/linux-stable && $(MAKE) menuconfig
 	cd ./build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
 
 config_travis:
