@@ -145,6 +145,7 @@ workflows:
   build-and-deploy:
     jobs:
       - checkout
+      - fedora_package
       - fedora_security:
           requires:
             - checkout
