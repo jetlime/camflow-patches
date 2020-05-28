@@ -113,6 +113,16 @@ jobs:
           root: ~/circulate
           paths:
             - ./output
+  fedora_package:
+    docker:
+      - image: fedora:31
+    working_directory: ~/circulate
+    steps:
+      - checkout
+      - run: 'sudo dnf install -y fedpkg fedora-packager rpmdevtools ncurses-devel pesign grubby'
+      - run:
+          command: 'make fedora'
+          no_output_timeout: '60m'
   publish:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
