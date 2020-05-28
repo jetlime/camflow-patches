@@ -121,3 +121,5 @@ fedora:
 	cd build/kernel && make release
 	cd build/kernel && fedpkg prep
 	cd build/kernel && fedpkg local
+	mkdir -p output
+	mv -f ./build/kernel/x86_64/*.rpm ./output
