@@ -120,4 +120,5 @@ fedora:
 	cd build/kernel && sudo dnf -y builddep kernel.spec
 	cd build/kernel && sed -i -e "s/# define buildid .local/%define buildid .camflow/g" kernel.spec
 	cd build/kernel && make release
+	cd build/kernel && fedpkg prep
 	cd build/kernel && fedpkg local
