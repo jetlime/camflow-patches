@@ -124,6 +124,9 @@ jobs:
       - run:
           command: 'make fedora'
           no_output_timeout: '60m'
+      - run:
+          command: 'cat build/kernel/*.log'
+          when: always
   publish:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
