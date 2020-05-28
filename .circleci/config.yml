@@ -125,7 +125,7 @@ jobs:
           command: 'make fedora'
           no_output_timeout: '60m'
       - run:
-          command: 'cat build/kernel/*.log'
+          command: 'cat /root/circulate/build/kernel/.build-*.log'
           when: always
   publish:
     docker:
