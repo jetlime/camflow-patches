@@ -119,4 +119,4 @@ fedora:
 	cd build/kernel && sudo dnf -y builddep kernel.spec
 	cd build/kernel && echo '%define buildid .camflow' > config-local
 	cd build/kernel && make release
-	cd build/kernel && fedpkg --verbose local
+	cd build/kernel && fedpkg local
