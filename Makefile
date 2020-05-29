@@ -118,6 +118,7 @@ fedora:
 	cd build && fedpkg clone -a kernel
 	cd build/kernel && git checkout -b camflow origin/f$(fedora-version)
 	cd build/kernel && sudo dnf -y builddep kernel.spec
+	cd build/kernel && sudo /usr/libexec/pesign/pesign-authorize
 	cd build/kernel && sed -i -e "s/# define buildid .local/%define buildid .camflow/g" kernel.spec
 	cd build/kernel && make release
 	cd build/kernel && fedpkg prep
