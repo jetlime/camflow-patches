@@ -119,7 +119,6 @@ jobs:
     working_directory: ~/circulate
     steps:
       - checkout
-      - run: 'docker volume prune --force'
       - run: 'sudo dnf install -y make'
       - run: 'sudo dnf install -y fedpkg fedora-packager rpmdevtools ncurses-devel pesign grubby'
       - run:
