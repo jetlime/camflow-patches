@@ -125,11 +125,15 @@ jobs:
           command: 'make fedora'
           no_output_timeout: '60m'
       - run:
-          command: 'cat /root/circulate/build/kernel/.build-*.log'
+          command: |
+            mkdir -p /tmp/build-logs
+            cp -f /root/circulate/build/kernel/.build-*.log /tmp/build-logs
           when: always
       - run:
           command: 'df -h'
           when: always
+      - store_artifacts:
+          path: /tmp/build-logs
   publish:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
