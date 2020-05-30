@@ -132,6 +132,9 @@ jobs:
       - run:
           command: 'df -h'
           when: always
+      - run:
+          command: './test-packages.sh'
+          when: always
       - store_artifacts:
           path: /tmp/build-logs
   publish:
