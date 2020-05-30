@@ -127,7 +127,7 @@ jobs:
       - run:
           command: |
             mkdir -p /tmp/build-logs
-            cp -f /root/circulate/build/kernel/.build-*.log /tmp/build-logs
+            cat /root/circulate/build/kernel/.build-*.log > /tmp/build-logs/build.log
           when: always
       - run:
           command: 'df -h'
