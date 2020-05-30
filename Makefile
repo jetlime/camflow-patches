@@ -7,7 +7,8 @@ prepare:
 	mkdir -p build
 	cd ./build && git clone -b v$(kernel-version) --single-branch git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 	cd ./build/linux-stable && $(MAKE) mrproper
-	cd ./build/linux-stable && patch -p2 < ../../camflow.patch
+	cd ./build/linux-stable && git apply ../../0001-information-flow.patch
+	cd ./build/linux-stable && git apply ../../0002-camflow.patch
 
 config_def:
 	echo "Default method to retrieve configuration"
@@ -117,7 +118,9 @@ fedora:
 	cd build && fedpkg clone -a kernel
 	cd build/kernel && git checkout -b camflow origin/f$(fedora-version)
 	cd build/kernel && sudo dnf -y builddep kernel.spec
-	cd build/kernel && ./scripts/newpatch.sh ../../camflow.patch
+	cd build/kernel && ./scripts/newpatch.sh ../../0001-information-flow.patch
+	cd build/kernel && ./scripts/newpatch.sh ../../0002-camflow.patch
+	./prep_config.sh
 	cd build/kernel && make release
 	cd build/kernel && fedpkg prep
 	cd build/kernel && fedpkg local

@@ -1,61 +1,108 @@
-diff -uprN -b -B ./pristine/linux-stable/fs/splice.c ./linux-stable/fs/splice.c
---- ./pristine/linux-stable/fs/splice.c	2020-04-30 06:42:38.782585842 +0000
-+++ ./linux-stable/fs/splice.c	2020-04-30 06:43:39.402075072 +0000
-@@ -1135,6 +1135,12 @@ static long do_splice(struct file *in, l
- 		if (ipipe == opipe)
- 			return -EINVAL;
+From 62da35e10dd33d50c3febed4722da6f6cb136c39 Mon Sep 17 00:00:00 2001
+From: Thomas Pasquier <thomas.francis.pasquier@gmail.com>
+Date: Sat, 30 May 2020 07:02:09 +0000
+Subject: [PATCH 2/2] camflow
+
+Signed-off-by: Thomas Pasquier <thomas.francis.pasquier@gmail.com>
+---
+ include/linux/fs.h                            |   15 +-
+ include/linux/provenance_query.h              |   37 +
+ include/linux/provenance_types.h              |   27 +
+ include/net/sock.h                            |    4 +
+ include/uapi/linux/provenance.h               |  348 ++
+ include/uapi/linux/provenance_fs.h            |  124 +
+ include/uapi/linux/provenance_types.h         |  294 ++
+ include/uapi/linux/provenance_utils.h         |  103 +
+ include/uapi/linux/xattr.h                    |    3 +
+ security/Kconfig                              |   11 +-
+ security/Makefile                             |    2 +
+ security/provenance/Kconfig                   |   32 +
+ security/provenance/Makefile                  |    8 +
+ security/provenance/fs.c                      | 1141 +++++++
+ security/provenance/hooks.c                   | 2950 +++++++++++++++++
+ security/provenance/include/memcpy_ss.h       |   23 +
+ security/provenance/include/provenance.h      |  284 ++
+ .../provenance/include/provenance_filter.h    |  319 ++
+ .../provenance/include/provenance_inode.h     |  604 ++++
+ .../provenance/include/provenance_machine.h   |   24 +
+ security/provenance/include/provenance_net.h  |  414 +++
+ security/provenance/include/provenance_ns.h   |  139 +
+ .../provenance/include/provenance_policy.h    |   62 +
+ .../provenance/include/provenance_query.h     |   97 +
+ .../provenance/include/provenance_record.h    |  581 ++++
+ .../provenance/include/provenance_relay.h     |  188 ++
+ security/provenance/include/provenance_task.h |  656 ++++
+ security/provenance/machine.c                 |   51 +
+ security/provenance/memcpy_ss.c               |   66 +
+ security/provenance/netfilter.c               |  117 +
+ security/provenance/propagate.c               |   43 +
+ security/provenance/query.c                   |   49 +
+ security/provenance/relay.c                   |  440 +++
+ security/provenance/type.c                    |  588 ++++
+ 34 files changed, 9833 insertions(+), 11 deletions(-)
+ create mode 100644 include/linux/provenance_query.h
+ create mode 100644 include/linux/provenance_types.h
+ create mode 100644 include/uapi/linux/provenance.h
+ create mode 100644 include/uapi/linux/provenance_fs.h
+ create mode 100644 include/uapi/linux/provenance_types.h
+ create mode 100644 include/uapi/linux/provenance_utils.h
+ create mode 100644 security/provenance/Kconfig
+ create mode 100644 security/provenance/Makefile
+ create mode 100644 security/provenance/fs.c
+ create mode 100644 security/provenance/hooks.c
+ create mode 100644 security/provenance/include/memcpy_ss.h
+ create mode 100644 security/provenance/include/provenance.h
+ create mode 100644 security/provenance/include/provenance_filter.h
+ create mode 100644 security/provenance/include/provenance_inode.h
+ create mode 100644 security/provenance/include/provenance_machine.h
+ create mode 100644 security/provenance/include/provenance_net.h
+ create mode 100644 security/provenance/include/provenance_ns.h
+ create mode 100644 security/provenance/include/provenance_policy.h
+ create mode 100644 security/provenance/include/provenance_query.h
+ create mode 100644 security/provenance/include/provenance_record.h
+ create mode 100644 security/provenance/include/provenance_relay.h
+ create mode 100644 security/provenance/include/provenance_task.h
+ create mode 100644 security/provenance/machine.c
+ create mode 100644 security/provenance/memcpy_ss.c
+ create mode 100644 security/provenance/netfilter.c
+ create mode 100644 security/provenance/propagate.c
+ create mode 100644 security/provenance/query.c
+ create mode 100644 security/provenance/relay.c
+ create mode 100644 security/provenance/type.c
+
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index abedbffe2c9e..8e296fe3cfc7 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -250,7 +250,7 @@ struct iattr {
+  */
+ #define FILESYSTEM_MAX_STACK_DEPTH 2
  
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+		ret = security_file_splice_pipe_to_pipe(in, out);
-+		if (ret)
-+			return ret;
-+#endif
-+
- 		if ((in->f_flags | out->f_flags) & O_NONBLOCK)
- 			flags |= SPLICE_F_NONBLOCK;
+-/** 
++/**
+  * enum positive_aop_returns - aop return codes with specific semantics
+  *
+  * @AOP_WRITEPAGE_ACTIVATE: Informs the caller that page writeback has
+@@ -260,7 +260,7 @@ struct iattr {
+  * 			    be a candidate for writeback again in the near
+  * 			    future.  Other callers must be careful to unlock
+  * 			    the page if they get this return.  Returned by
+- * 			    writepage(); 
++ * 			    writepage();
+  *
+  * @AOP_TRUNCATED_PAGE: The AOP method that was handed a locked page has
+  *  			unlocked it and the page might have been truncated.
+@@ -993,8 +993,8 @@ static inline struct file *get_file(struct file *f)
  
-@@ -1289,6 +1295,12 @@ static long vmsplice_to_user(struct file
- 	if (!pipe)
- 		return -EBADF;
+ #define	MAX_NON_LFS	((1UL<<31) - 1)
  
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+	ret = security_file_permission(file, MAY_READ);
-+	if (ret)
-+		return ret;
-+#endif
-+
- 	if (sd.total_len) {
- 		pipe_lock(pipe);
- 		ret = __splice_from_pipe(pipe, &sd, pipe_to_user);
-@@ -1317,6 +1329,12 @@ static long vmsplice_to_pipe(struct file
- 	if (!pipe)
- 		return -EBADF;
- 
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+	ret = security_file_permission(file, MAY_WRITE);
-+	if (ret)
-+		return ret;
-+#endif
-+
- 	pipe_lock(pipe);
- 	ret = wait_for_space(pipe, flags);
- 	if (!ret)
-@@ -1775,6 +1793,12 @@ static long do_tee(struct file *in, stru
- 	 * copying the data.
- 	 */
- 	if (ipipe && opipe && ipipe != opipe) {
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+		ret = security_file_splice_pipe_to_pipe(in, out);
-+		if (ret)
-+			return ret;
-+#endif
-+
- 		if ((in->f_flags | out->f_flags) & O_NONBLOCK)
- 			flags |= SPLICE_F_NONBLOCK;
- 
-diff -uprN -b -B ./pristine/linux-stable/include/linux/fs.h ./linux-stable/include/linux/fs.h
---- ./pristine/linux-stable/include/linux/fs.h	2020-04-30 06:42:37.535576582 +0000
-+++ ./linux-stable/include/linux/fs.h	2020-04-30 06:43:40.334082812 +0000
+-/* Page cache limit. The filesystems should put that into their s_maxbytes 
+-   limits, otherwise bad things can happen in VM. */ 
++/* Page cache limit. The filesystems should put that into their s_maxbytes
++   limits, otherwise bad things can happen in VM. */
+ #if BITS_PER_LONG==32
+ #define MAX_LFS_FILESIZE	((loff_t)ULONG_MAX << PAGE_SHIFT)
+ #elif BITS_PER_LONG==64
 @@ -1442,6 +1442,9 @@ struct super_block {
  	atomic_t		s_active;
  #ifdef CONFIG_SECURITY
@@ -66,52 +113,29 @@ diff -uprN -b -B ./pristine/linux-stable/include/linux/fs.h ./linux-stable/inclu
  #endif
  	const struct xattr_handler **s_xattr;
  #ifdef CONFIG_FS_ENCRYPTION
-diff -uprN -b -B ./pristine/linux-stable/include/linux/lsm_hooks.h ./linux-stable/include/linux/lsm_hooks.h
---- ./pristine/linux-stable/include/linux/lsm_hooks.h	2020-04-30 06:42:37.545576656 +0000
-+++ ./linux-stable/include/linux/lsm_hooks.h	2020-04-30 06:43:39.404075088 +0000
-@@ -1807,6 +1807,23 @@ union security_list_options {
- 	void (*audit_rule_free)(void *lsmrule);
- #endif /* CONFIG_AUDIT */
- 
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+  void (*mmap_munmap)(struct mm_struct *mm,
-+  				struct vm_area_struct *vma,
-+  				unsigned long start, unsigned long end);
-+  int (*file_splice_pipe_to_pipe)(struct file *in,
-+  				struct file *out);
-+  int (*mq_timedsend)(struct inode *inode, struct msg_msg *msg,
-+  			struct timespec64 *ts);
-+  int (*mq_timedreceive)(struct inode *inode, struct msg_msg *msg,
-+  			struct timespec64 *ts);
-+  void (*shm_shmdt)(struct kern_ipc_perm *shp);
-+  int (*socket_sendmsg_always)(struct socket *sock, struct msghdr *msg,
-+  				int size);
-+  int (*socket_recvmsg_always)(struct socket *sock, struct msghdr *msg,
-+  				int size, int flags);
-+#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
+@@ -2229,7 +2232,7 @@ int sync_inode_metadata(struct inode *inode, int wait);
+ struct file_system_type {
+ 	const char *name;
+ 	int fs_flags;
+-#define FS_REQUIRES_DEV		1 
++#define FS_REQUIRES_DEV		1
+ #define FS_BINARY_MOUNTDATA	2
+ #define FS_HAS_SUBTYPE		4
+ #define FS_USERNS_MOUNT		8	/* Can be mounted by userns root */
+@@ -3019,7 +3022,7 @@ extern ssize_t kernel_read(struct file *, void *, size_t, loff_t *);
+ extern ssize_t kernel_write(struct file *, const void *, size_t, loff_t *);
+ extern ssize_t __kernel_write(struct file *, const void *, size_t, loff_t *);
+ extern struct file * open_exec(const char *);
+- 
 +
- #ifdef CONFIG_BPF_SYSCALL
- 	int (*bpf)(int cmd, union bpf_attr *attr,
- 				 unsigned int size);
-@@ -2058,6 +2075,15 @@ struct security_hook_heads {
- 	struct hlist_head audit_rule_match;
- 	struct hlist_head audit_rule_free;
- #endif /* CONFIG_AUDIT */
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+	struct hlist_head mmap_munmap;
-+	struct hlist_head file_splice_pipe_to_pipe;
-+	struct hlist_head mq_timedsend;
-+	struct hlist_head mq_timedreceive;
-+	struct hlist_head shm_shmdt;
-+	struct hlist_head socket_sendmsg_always;
-+	struct hlist_head socket_recvmsg_always;
-+#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
- #ifdef CONFIG_BPF_SYSCALL
- 	struct hlist_head bpf;
- 	struct hlist_head bpf_map;
-diff -uprN -b -B ./pristine/linux-stable/include/linux/provenance_query.h ./linux-stable/include/linux/provenance_query.h
---- ./pristine/linux-stable/include/linux/provenance_query.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/include/linux/provenance_query.h	2020-04-30 06:43:40.334082812 +0000
+ /* fs/dcache.c -- generic fs support functions */
+ extern bool is_subdir(struct dentry *, struct dentry *);
+ extern bool path_is_under(const struct path *, const struct path *);
+diff --git a/include/linux/provenance_query.h b/include/linux/provenance_query.h
+new file mode 100644
+index 000000000000..b59ce646e69b
+--- /dev/null
++++ b/include/linux/provenance_query.h
 @@ -0,0 +1,37 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -150,9 +174,11 @@ diff -uprN -b -B ./pristine/linux-stable/include/linux/provenance_query.h ./linu
 +int register_provenance_query_hooks( struct provenance_query_hooks *hook);
 +int unregister_provenance_query_hooks( struct provenance_query_hooks *hook);
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/include/linux/provenance_types.h ./linux-stable/include/linux/provenance_types.h
---- ./pristine/linux-stable/include/linux/provenance_types.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/include/linux/provenance_types.h	2020-04-30 06:43:40.334082812 +0000
+diff --git a/include/linux/provenance_types.h b/include/linux/provenance_types.h
+new file mode 100644
+index 000000000000..3969329858c7
+--- /dev/null
++++ b/include/linux/provenance_types.h
 @@ -0,0 +1,27 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -181,83 +207,10 @@ diff -uprN -b -B ./pristine/linux-stable/include/linux/provenance_types.h ./linu
 +uint64_t node_id(const char *str);
 +
 +#endif /* _PROVENANCE_TYPES_H */
-diff -uprN -b -B ./pristine/linux-stable/include/linux/security.h ./linux-stable/include/linux/security.h
---- ./pristine/linux-stable/include/linux/security.h	2020-04-30 06:42:37.596577035 +0000
-+++ ./linux-stable/include/linux/security.h	2020-04-30 06:43:39.405075097 +0000
-@@ -447,6 +447,20 @@ int security_inode_notifysecctx(struct i
- int security_inode_setsecctx(struct dentry *dentry, void *ctx, u32 ctxlen);
- int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen);
- int security_locked_down(enum lockdown_reason what);
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+void security_shm_shmdt(struct kern_ipc_perm *shp);
-+int security_mq_timedsend(struct inode *inode, struct msg_msg *msg,
-+				size_t msg_len, struct timespec64 *ts);
-+int security_mq_timedreceive(struct inode *inode, struct msg_msg *msg,
-+				size_t msg_len, struct timespec64 *ts);
-+int security_socket_sendmsg_always(struct socket *sock, struct msghdr *msg,
-+				int size);
-+int security_socket_recvmsg_always(struct socket *sock, struct msghdr *msg,
-+			  int size, int flags);
-+void security_mmap_munmap(struct mm_struct *mm, struct vm_area_struct *vma,
-+			  unsigned long start, unsigned long end);
-+int security_file_splice_pipe_to_pipe(struct file *in, struct file *out);
-+#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
- #else /* CONFIG_SECURITY */
- 
- static inline int call_blocking_lsm_notifier(enum lsm_event event, void *data)
-@@ -1899,6 +1913,49 @@ static inline void security_bpf_prog_fre
- #endif /* CONFIG_SECURITY */
- #endif /* CONFIG_BPF_SYSCALL */
- 
-+#ifndef CONFIG_SECURITY
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+static inline void security_mmap_munmap(struct mm_struct *mm,
-+					struct vm_area_struct *vma,
-+					unsigned long start, unsigned long end)
-+{ }
-+
-+static inline int security_file_splice_pipe_to_pipe(struct file *in,
-+						    struct file *out)
-+{
-+	return 0;
-+}
-+
-+static inline int security_mq_timedsend(struct inode *inode,
-+			struct msg_msg *msg, size_t msg_len, struct timespec64 *ts)
-+{
-+	return 0;
-+}
-+
-+static inline int security_mq_timedreceive(struct inode *inode,
-+			struct msg_msg *msg, size_t msg_len, struct timespec64 *ts)
-+{
-+	return 0;
-+}
-+
-+static inline void security_shm_shmdt(struct kern_ipc_perm *shp)
-+{ }
-+
-+static inline int security_socket_sendmsg_always(struct socket *sock,
-+					  struct msghdr *msg, int size)
-+{
-+	return 0;
-+}
-+
-+static inline int security_socket_recvmsg_always(struct socket *sock,
-+					  struct msghdr *msg, int size,
-+					  int flags)
-+{
-+	return 0;
-+}
-+#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
-+#endif /* CONFIG_SECURITY */
-+
- #ifdef CONFIG_PERF_EVENTS
- struct perf_event_attr;
- struct perf_event;
-diff -uprN -b -B ./pristine/linux-stable/include/net/sock.h ./linux-stable/include/net/sock.h
---- ./pristine/linux-stable/include/net/sock.h	2020-04-30 06:42:37.449575943 +0000
-+++ ./linux-stable/include/net/sock.h	2020-04-30 06:43:40.333082803 +0000
+diff --git a/include/net/sock.h b/include/net/sock.h
+index 328564525526..bbfcac4c7333 100644
+--- a/include/net/sock.h
++++ b/include/net/sock.h
 @@ -324,6 +324,7 @@ struct bpf_sk_storage;
    *	@tcp_rtx_queue: TCP re-transmit queue [union with @sk_send_head]
    *	@sk_tx_skb_cache: cache copy of recently accessed TX skb
@@ -276,137 +229,11 @@ diff -uprN -b -B ./pristine/linux-stable/include/net/sock.h ./linux-stable/inclu
  #endif
  	struct sock_cgroup_data	sk_cgrp_data;
  	struct mem_cgroup	*sk_memcg;
-diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_fs.h ./linux-stable/include/uapi/linux/provenance_fs.h
---- ./pristine/linux-stable/include/uapi/linux/provenance_fs.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/include/uapi/linux/provenance_fs.h	2020-04-30 06:43:40.334082812 +0000
-@@ -0,0 +1,124 @@
-+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
-+/*
-+ * Copyright (C) 2015-2016 University of Cambridge,
-+ * Copyright (C) 2016-2017 Harvard University,
-+ * Copyright (C) 2017-2018 University of Cambridge,
-+ * Copyright (C) 2018-2020 University of Bristol
-+ *
-+ * Author: Thomas Pasquier <thomas.pasquier@bristol.ac.uk>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2, as
-+ * published by the Free Software Foundation; either version 2 of the License,
-+ * or (at your option) any later version.
-+ */
-+
-+#ifndef _UAPI_LINUX_PROVENANCE_FS_H
-+#define _UAPI_LINUX_PROVENANCE_FS_H
-+
-+#include <linux/provenance.h>
-+
-+ #define PROV_SEC_PATH                           "/sys/kernel/security/provenance/"
-+ #define PROV_ENABLE_FILE                        "/sys/kernel/security/provenance/enable"
-+ #define PROV_ALL_FILE                           "/sys/kernel/security/provenance/all"
-+ #define PROV_WRITTEN_FILE                       "/sys/kernel/security/provenance/written"
-+ #define PROV_COMPRESS_NODE_FILE                 "/sys/kernel/security/provenance/compress_node"
-+ #define PROV_COMPRESS_EDGE_FILE                 "/sys/kernel/security/provenance/compress_edge"
-+ #define PROV_NODE_FILE                          "/sys/kernel/security/provenance/node"
-+ #define PROV_RELATION_FILE                      "/sys/kernel/security/provenance/relation"
-+ #define PROV_SELF_FILE                          "/sys/kernel/security/provenance/self"
-+ #define PROV_MACHINE_ID_FILE                    "/sys/kernel/security/provenance/machine_id"
-+ #define PROV_BOOT_ID_FILE                       "/sys/kernel/security/provenance/boot_id"
-+ #define PROV_NODE_FILTER_FILE                   "/sys/kernel/security/provenance/node_filter"
-+ #define PROV_DERIVED_FILTER_FILE                "/sys/kernel/security/provenance/derived_filter"
-+ #define PROV_GENERATED_FILTER_FILE              "/sys/kernel/security/provenance/generated_filter"
-+ #define PROV_USED_FILTER_FILE                   "/sys/kernel/security/provenance/used_filter"
-+ #define PROV_INFORMED_FILTER_FILE               "/sys/kernel/security/provenance/informed_filter"
-+ #define PROV_PROPAGATE_NODE_FILTER_FILE         "/sys/kernel/security/provenance/propagate_node_filter"
-+ #define PROV_PROPAGATE_DERIVED_FILTER_FILE      "/sys/kernel/security/provenance/propagate_derived_filter"
-+ #define PROV_PROPAGATE_GENERATED_FILTER_FILE    "/sys/kernel/security/provenance/propagate_generated_filter"
-+ #define PROV_PROPAGATE_USED_FILTER_FILE         "/sys/kernel/security/provenance/propagate_used_filter"
-+ #define PROV_PROPAGATE_INFORMED_FILTER_FILE     "/sys/kernel/security/provenance/propagate_informed_filter"
-+ #define PROV_FLUSH_FILE                         "/sys/kernel/security/provenance/flush"
-+ #define PROV_PROCESS_FILE                       "/sys/kernel/security/provenance/process"
-+ #define PROV_IPV4_INGRESS_FILE                  "/sys/kernel/security/provenance/ipv4_ingress"
-+ #define PROV_IPV4_EGRESS_FILE                   "/sys/kernel/security/provenance/ipv4_egress"
-+ #define PROV_SECCTX                             "/sys/kernel/security/provenance/secctx"
-+ #define PROV_SECCTX_FILTER                      "/sys/kernel/security/provenance/secctx_filter"
-+ #define PROV_NS_FILTER                          "/sys/kernel/security/provenance/ns"
-+ #define PROV_LOG_FILE                           "/sys/kernel/security/provenance/log"
-+ #define PROV_LOGP_FILE                          "/sys/kernel/security/provenance/logp"
-+ #define PROV_POLICY_HASH_FILE                   "/sys/kernel/security/provenance/policy_hash"
-+ #define PROV_UID_FILTER                         "/sys/kernel/security/provenance/uid"
-+ #define PROV_GID_FILTER                         "/sys/kernel/security/provenance/gid"
-+ #define PROV_TYPE                               "/sys/kernel/security/provenance/type"
-+ #define PROV_VERSION                            "/sys/kernel/security/provenance/version"
-+ #define PROV_COMMIT                             "/sys/kernel/security/provenance/commit"
-+ #define PROV_CHANNEL                            "/sys/kernel/security/provenance/channel"
-+ #define PROV_DUPLICATE_FILE                     "/sys/kernel/security/provenance/duplicate"
-+ #define PROV_EPOCH_FILE                         "/sys/kernel/security/provenance/epoch"
-+
-+ #define PROV_RELAY_NAME                         "/sys/kernel/debug/provenance"
-+ #define PROV_LONG_RELAY_NAME                    "/sys/kernel/debug/long_provenance"
-+ #define PROV_CHANNEL_ROOT                       "/sys/kernel/debug/"
-+
-+struct prov_filter {
-+	uint64_t filter;
-+	uint64_t mask;
-+	uint8_t add;
-+};
-+
-+ #define PROV_SET_TRACKED        0x01
-+ #define PROV_SET_OPAQUE         0x02
-+ #define PROV_SET_PROPAGATE      0x04
-+ #define PROV_SET_TAINT          0x08
-+ #define PROV_SET_DELETE         0x10
-+ #define PROV_SET_RECORD         0x20
-+
-+struct prov_process_config {
-+	union prov_elt prov;
-+	uint8_t op;
-+	uint32_t vpid;
-+};
-+
-+struct prov_ipv4_filter {
-+	uint32_t ip;
-+	uint32_t mask;
-+	uint16_t port;
-+	uint8_t op;
-+	uint64_t taint;
-+};
-+
-+struct secinfo {
-+	uint32_t secid;
-+	char secctx[PATH_MAX];
-+	uint32_t len;
-+	uint8_t op;
-+	uint64_t taint;
-+};
-+
-+struct userinfo {
-+	uint32_t uid;
-+	uint8_t op;
-+	uint64_t taint;
-+};
-+
-+struct groupinfo {
-+	uint32_t gid;
-+	uint8_t op;
-+	uint64_t taint;
-+};
-+
-+ #define IGNORE_NS    0
-+
-+struct nsinfo {
-+	uint32_t utsns;
-+	uint32_t ipcns;
-+	uint32_t mntns;
-+	uint32_t pidns;
-+	uint32_t netns;
-+	uint32_t cgroupns;
-+	uint8_t op;
-+	uint64_t taint;
-+};
-+ #endif
-diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance.h ./linux-stable/include/uapi/linux/provenance.h
---- ./pristine/linux-stable/include/uapi/linux/provenance.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/include/uapi/linux/provenance.h	2020-04-30 06:43:40.334082812 +0000
+diff --git a/include/uapi/linux/provenance.h b/include/uapi/linux/provenance.h
+new file mode 100644
+index 000000000000..0124ba70e23a
+--- /dev/null
++++ b/include/uapi/linux/provenance.h
 @@ -0,0 +1,348 @@
 +/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 +/*
@@ -451,7 +278,7 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance.h ./linux
 +	"."xstr (CAMFLOW_VERSION_MINOR)					\
 +	"."xstr (CAMFLOW_VERSION_PATCH)					\
 +
-+#define CAMFLOW_COMMIT "e91705d86bf121d0b3367f19a8c9a249c174f0f4"
++#define CAMFLOW_COMMIT "1524b27bdbb1dff0052e1fa381178346211f8288"
 +
 +#define PROVENANCE_HASH                 "sha256"
 +
@@ -756,9 +583,141 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance.h ./linux
 +
 +typedef union long_prov_elt prov_entry_t;
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_types.h ./linux-stable/include/uapi/linux/provenance_types.h
---- ./pristine/linux-stable/include/uapi/linux/provenance_types.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/include/uapi/linux/provenance_types.h	2020-04-30 06:43:40.334082812 +0000
+diff --git a/include/uapi/linux/provenance_fs.h b/include/uapi/linux/provenance_fs.h
+new file mode 100644
+index 000000000000..9c46d75cfc5c
+--- /dev/null
++++ b/include/uapi/linux/provenance_fs.h
+@@ -0,0 +1,124 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++/*
++ * Copyright (C) 2015-2016 University of Cambridge,
++ * Copyright (C) 2016-2017 Harvard University,
++ * Copyright (C) 2017-2018 University of Cambridge,
++ * Copyright (C) 2018-2020 University of Bristol
++ *
++ * Author: Thomas Pasquier <thomas.pasquier@bristol.ac.uk>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef _UAPI_LINUX_PROVENANCE_FS_H
++#define _UAPI_LINUX_PROVENANCE_FS_H
++
++#include <linux/provenance.h>
++
++ #define PROV_SEC_PATH                           "/sys/kernel/security/provenance/"
++ #define PROV_ENABLE_FILE                        "/sys/kernel/security/provenance/enable"
++ #define PROV_ALL_FILE                           "/sys/kernel/security/provenance/all"
++ #define PROV_WRITTEN_FILE                       "/sys/kernel/security/provenance/written"
++ #define PROV_COMPRESS_NODE_FILE                 "/sys/kernel/security/provenance/compress_node"
++ #define PROV_COMPRESS_EDGE_FILE                 "/sys/kernel/security/provenance/compress_edge"
++ #define PROV_NODE_FILE                          "/sys/kernel/security/provenance/node"
++ #define PROV_RELATION_FILE                      "/sys/kernel/security/provenance/relation"
++ #define PROV_SELF_FILE                          "/sys/kernel/security/provenance/self"
++ #define PROV_MACHINE_ID_FILE                    "/sys/kernel/security/provenance/machine_id"
++ #define PROV_BOOT_ID_FILE                       "/sys/kernel/security/provenance/boot_id"
++ #define PROV_NODE_FILTER_FILE                   "/sys/kernel/security/provenance/node_filter"
++ #define PROV_DERIVED_FILTER_FILE                "/sys/kernel/security/provenance/derived_filter"
++ #define PROV_GENERATED_FILTER_FILE              "/sys/kernel/security/provenance/generated_filter"
++ #define PROV_USED_FILTER_FILE                   "/sys/kernel/security/provenance/used_filter"
++ #define PROV_INFORMED_FILTER_FILE               "/sys/kernel/security/provenance/informed_filter"
++ #define PROV_PROPAGATE_NODE_FILTER_FILE         "/sys/kernel/security/provenance/propagate_node_filter"
++ #define PROV_PROPAGATE_DERIVED_FILTER_FILE      "/sys/kernel/security/provenance/propagate_derived_filter"
++ #define PROV_PROPAGATE_GENERATED_FILTER_FILE    "/sys/kernel/security/provenance/propagate_generated_filter"
++ #define PROV_PROPAGATE_USED_FILTER_FILE         "/sys/kernel/security/provenance/propagate_used_filter"
++ #define PROV_PROPAGATE_INFORMED_FILTER_FILE     "/sys/kernel/security/provenance/propagate_informed_filter"
++ #define PROV_FLUSH_FILE                         "/sys/kernel/security/provenance/flush"
++ #define PROV_PROCESS_FILE                       "/sys/kernel/security/provenance/process"
++ #define PROV_IPV4_INGRESS_FILE                  "/sys/kernel/security/provenance/ipv4_ingress"
++ #define PROV_IPV4_EGRESS_FILE                   "/sys/kernel/security/provenance/ipv4_egress"
++ #define PROV_SECCTX                             "/sys/kernel/security/provenance/secctx"
++ #define PROV_SECCTX_FILTER                      "/sys/kernel/security/provenance/secctx_filter"
++ #define PROV_NS_FILTER                          "/sys/kernel/security/provenance/ns"
++ #define PROV_LOG_FILE                           "/sys/kernel/security/provenance/log"
++ #define PROV_LOGP_FILE                          "/sys/kernel/security/provenance/logp"
++ #define PROV_POLICY_HASH_FILE                   "/sys/kernel/security/provenance/policy_hash"
++ #define PROV_UID_FILTER                         "/sys/kernel/security/provenance/uid"
++ #define PROV_GID_FILTER                         "/sys/kernel/security/provenance/gid"
++ #define PROV_TYPE                               "/sys/kernel/security/provenance/type"
++ #define PROV_VERSION                            "/sys/kernel/security/provenance/version"
++ #define PROV_COMMIT                             "/sys/kernel/security/provenance/commit"
++ #define PROV_CHANNEL                            "/sys/kernel/security/provenance/channel"
++ #define PROV_DUPLICATE_FILE                     "/sys/kernel/security/provenance/duplicate"
++ #define PROV_EPOCH_FILE                         "/sys/kernel/security/provenance/epoch"
++
++ #define PROV_RELAY_NAME                         "/sys/kernel/debug/provenance"
++ #define PROV_LONG_RELAY_NAME                    "/sys/kernel/debug/long_provenance"
++ #define PROV_CHANNEL_ROOT                       "/sys/kernel/debug/"
++
++struct prov_filter {
++	uint64_t filter;
++	uint64_t mask;
++	uint8_t add;
++};
++
++ #define PROV_SET_TRACKED        0x01
++ #define PROV_SET_OPAQUE         0x02
++ #define PROV_SET_PROPAGATE      0x04
++ #define PROV_SET_TAINT          0x08
++ #define PROV_SET_DELETE         0x10
++ #define PROV_SET_RECORD         0x20
++
++struct prov_process_config {
++	union prov_elt prov;
++	uint8_t op;
++	uint32_t vpid;
++};
++
++struct prov_ipv4_filter {
++	uint32_t ip;
++	uint32_t mask;
++	uint16_t port;
++	uint8_t op;
++	uint64_t taint;
++};
++
++struct secinfo {
++	uint32_t secid;
++	char secctx[PATH_MAX];
++	uint32_t len;
++	uint8_t op;
++	uint64_t taint;
++};
++
++struct userinfo {
++	uint32_t uid;
++	uint8_t op;
++	uint64_t taint;
++};
++
++struct groupinfo {
++	uint32_t gid;
++	uint8_t op;
++	uint64_t taint;
++};
++
++ #define IGNORE_NS    0
++
++struct nsinfo {
++	uint32_t utsns;
++	uint32_t ipcns;
++	uint32_t mntns;
++	uint32_t pidns;
++	uint32_t netns;
++	uint32_t cgroupns;
++	uint8_t op;
++	uint64_t taint;
++};
++ #endif
+diff --git a/include/uapi/linux/provenance_types.h b/include/uapi/linux/provenance_types.h
+new file mode 100644
+index 000000000000..56541407d9db
+--- /dev/null
++++ b/include/uapi/linux/provenance_types.h
 @@ -0,0 +1,294 @@
 +/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 +/*
@@ -1054,9 +1013,11 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_types.h .
 +};
 +
 +#endif /* _UAPI_LINUX_PROVENANCE_TYPES_H */
-diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_utils.h ./linux-stable/include/uapi/linux/provenance_utils.h
---- ./pristine/linux-stable/include/uapi/linux/provenance_utils.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/include/uapi/linux/provenance_utils.h	2020-04-30 06:43:40.334082812 +0000
+diff --git a/include/uapi/linux/provenance_utils.h b/include/uapi/linux/provenance_utils.h
+new file mode 100644
+index 000000000000..07d7e44490b8
+--- /dev/null
++++ b/include/uapi/linux/provenance_utils.h
 @@ -0,0 +1,103 @@
 +/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 +/*
@@ -1161,9 +1122,10 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/provenance_utils.h .
 +	return true;
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/xattr.h ./linux-stable/include/uapi/linux/xattr.h
---- ./pristine/linux-stable/include/uapi/linux/xattr.h	2020-04-30 06:42:37.624577242 +0000
-+++ ./linux-stable/include/uapi/linux/xattr.h	2020-04-30 06:43:40.334082812 +0000
+diff --git a/include/uapi/linux/xattr.h b/include/uapi/linux/xattr.h
+index c1395b5bd432..56fc43e572c3 100644
+--- a/include/uapi/linux/xattr.h
++++ b/include/uapi/linux/xattr.h
 @@ -53,6 +53,9 @@
  #define XATTR_SELINUX_SUFFIX "selinux"
  #define XATTR_NAME_SELINUX XATTR_SECURITY_PREFIX XATTR_SELINUX_SUFFIX
@@ -1174,135 +1136,11 @@ diff -uprN -b -B ./pristine/linux-stable/include/uapi/linux/xattr.h ./linux-stab
  #define XATTR_SMACK_SUFFIX "SMACK64"
  #define XATTR_SMACK_IPIN "SMACK64IPIN"
  #define XATTR_SMACK_IPOUT "SMACK64IPOUT"
-diff -uprN -b -B ./pristine/linux-stable/ipc/mqueue.c ./linux-stable/ipc/mqueue.c
---- ./pristine/linux-stable/ipc/mqueue.c	2020-04-30 06:42:36.642569951 +0000
-+++ ./linux-stable/ipc/mqueue.c	2020-04-30 06:43:39.406075105 +0000
-@@ -1084,6 +1084,11 @@ static int do_mq_timedsend(mqd_t mqdes,
- 	msg_ptr->m_ts = msg_len;
- 	msg_ptr->m_type = msg_prio;
- 
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+	ret = security_mq_timedsend(inode, msg_ptr, msg_len, timeout ? ts : NULL);
-+	if (ret)
-+		goto out_free;
-+#endif
- 	/*
- 	 * msg_insert really wants us to have a valid, spare node struct so
- 	 * it doesn't have to kmalloc a GFP_ATOMIC allocation, but it will
-@@ -1235,6 +1240,13 @@ static int do_mq_timedreceive(mqd_t mqde
- 		ret = 0;
- 	}
- 	if (ret == 0) {
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+		ret = security_mq_timedreceive(inode, msg_ptr, msg_len, timeout ? ts : NULL);
-+		if(ret) {
-+			free_msg(msg_ptr);
-+			goto out_fput;
-+		}
-+#endif
- 		ret = msg_ptr->m_ts;
- 
- 		if ((u_msg_prio && put_user(msg_ptr->m_type, u_msg_prio)) ||
-diff -uprN -b -B ./pristine/linux-stable/ipc/shm.c ./linux-stable/ipc/shm.c
---- ./pristine/linux-stable/ipc/shm.c	2020-04-30 06:42:36.642569951 +0000
-+++ ./linux-stable/ipc/shm.c	2020-04-30 06:43:39.409075130 +0000
-@@ -340,6 +340,14 @@ static void shm_close(struct vm_area_str
- 	ipc_update_pid(&shp->shm_lprid, task_tgid(current));
- 	shp->shm_dtim = ktime_get_real_seconds();
- 	shp->shm_nattch--;
-+
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+	/* the security module return value is ignored, the purpose of this hook
-+	 * is only to let the module know the memory segment is being detached
-+	 */
-+	security_shm_shmdt(&shp->shm_perm);
-+#endif
-+
- 	if (shm_may_destroy(ns, shp))
- 		shm_destroy(ns, shp);
- 	else
-diff -uprN -b -B ./pristine/linux-stable/Makefile ./linux-stable/Makefile
---- ./pristine/linux-stable/Makefile	2020-04-30 06:42:38.935586978 +0000
-+++ ./linux-stable/Makefile	2020-04-30 06:42:43.304619422 +0000
-@@ -2,7 +2,7 @@
- VERSION = 5
- PATCHLEVEL = 6
- SUBLEVEL = 7
--EXTRAVERSION =
-+EXTRAVERSION = camflow0.6.6
- NAME = Kleptomaniac Octopus
- 
- # *DOCUMENTATION*
-diff -uprN -b -B ./pristine/linux-stable/mm/mmap.c ./linux-stable/mm/mmap.c
---- ./pristine/linux-stable/mm/mmap.c	2020-04-30 06:42:37.186573990 +0000
-+++ ./linux-stable/mm/mmap.c	2020-04-30 06:43:39.409075130 +0000
-@@ -2761,6 +2761,13 @@ int __do_munmap(struct mm_struct *mm, un
- 		prev = vma;
- 	}
- 
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+	/* The return value is ignored, this LSM hook is only used to let the
-+	 * security module know that the memory is being unmapped
-+	 */
-+	security_mmap_munmap(mm, vma, start, end);
-+#endif
-+
- 	/* Does it split the last one? */
- 	last = find_vma(mm, end);
- 	if (last && end > last->vm_start) {
-diff -uprN -b -B ./pristine/linux-stable/net/socket.c ./linux-stable/net/socket.c
---- ./pristine/linux-stable/net/socket.c	2020-04-30 06:42:38.878586555 +0000
-+++ ./linux-stable/net/socket.c	2020-04-30 06:43:39.412075155 +0000
-@@ -649,9 +649,18 @@ INDIRECT_CALLABLE_DECLARE(int inet6_send
- 					    size_t));
- static inline int sock_sendmsg_nosec(struct socket *sock, struct msghdr *msg)
- {
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+	int ret = security_socket_sendmsg_always(sock, msg, msg_data_left(msg));
-+	if (ret)
-+		return ret;
-+	ret = INDIRECT_CALL_INET(sock->ops->sendmsg, inet6_sendmsg,
-+				     inet_sendmsg, sock, msg,
-+				     msg_data_left(msg));
-+#else
- 	int ret = INDIRECT_CALL_INET(sock->ops->sendmsg, inet6_sendmsg,
- 				     inet_sendmsg, sock, msg,
- 				     msg_data_left(msg));
-+#endif
- 	BUG_ON(ret == -EIOCBQUEUED);
- 	return ret;
- }
-@@ -883,6 +892,11 @@ INDIRECT_CALLABLE_DECLARE(int inet6_recv
- static inline int sock_recvmsg_nosec(struct socket *sock, struct msghdr *msg,
- 				     int flags)
- {
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+	int err = security_socket_recvmsg_always(sock, msg, msg_data_left(msg), flags);
-+	if (err)
-+		return err;
-+#endif
- 	return INDIRECT_CALL_INET(sock->ops->recvmsg, inet6_recvmsg,
- 				  inet_recvmsg, sock, msg, msg_data_left(msg),
- 				  flags);
-diff -uprN -b -B ./pristine/linux-stable/security/Kconfig ./linux-stable/security/Kconfig
---- ./pristine/linux-stable/security/Kconfig	2020-04-30 06:42:37.125573537 +0000
-+++ ./linux-stable/security/Kconfig	2020-04-30 06:43:40.326082745 +0000
-@@ -230,6 +230,14 @@ config STATIC_USERMODEHELPER_PATH
- 	  If you wish for all usermode helper programs to be disabled,
- 	  specify an empty string here (i.e. "").
- 
-+config SECURITY_FLOW_FRIENDLY
-+	bool "Security hooks for information flow mechanisms."
-+	default y
-+	help
-+		This option adds hooks to support information flow mechanisms. Some
-+		information flow are not captured by LSM as it was designed for access
-+		control.
-+
- source "security/selinux/Kconfig"
- source "security/smack/Kconfig"
- source "security/tomoyo/Kconfig"
-@@ -238,6 +246,7 @@ source "security/loadpin/Kconfig"
+diff --git a/security/Kconfig b/security/Kconfig
+index c736ea7f1593..c62f5ed50907 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -246,6 +246,7 @@ source "security/loadpin/Kconfig"
  source "security/yama/Kconfig"
  source "security/safesetid/Kconfig"
  source "security/lockdown/Kconfig"
@@ -1310,7 +1148,7 @@ diff -uprN -b -B ./pristine/linux-stable/security/Kconfig ./linux-stable/securit
  
  source "security/integrity/Kconfig"
  
-@@ -277,11 +286,11 @@ endchoice
+@@ -285,11 +286,11 @@ endchoice
  
  config LSM
  	string "Ordered list of enabled LSMs"
@@ -1327,10 +1165,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/Kconfig ./linux-stable/securit
  	help
  	  A comma-separated list of LSMs, in initialization order.
  	  Any LSMs left off this list will be ignored. This can be
-diff -uprN -b -B ./pristine/linux-stable/security/Makefile ./linux-stable/security/Makefile
---- ./pristine/linux-stable/security/Makefile	2020-04-30 06:42:37.125573537 +0000
-+++ ./linux-stable/security/Makefile	2020-04-30 06:43:40.326082745 +0000
-@@ -9,6 +9,7 @@ subdir-$(CONFIG_SECURITY_SMACK)		+= smac
+diff --git a/security/Makefile b/security/Makefile
+index 746438499029..1eae52b13200 100644
+--- a/security/Makefile
++++ b/security/Makefile
+@@ -9,6 +9,7 @@ subdir-$(CONFIG_SECURITY_SMACK)		+= smack
  subdir-$(CONFIG_SECURITY_TOMOYO)        += tomoyo
  subdir-$(CONFIG_SECURITY_APPARMOR)	+= apparmor
  subdir-$(CONFIG_SECURITY_YAMA)		+= yama
@@ -1346,9 +1185,63 @@ diff -uprN -b -B ./pristine/linux-stable/security/Makefile ./linux-stable/securi
  obj-$(CONFIG_SECURITY_LOADPIN)		+= loadpin/
  obj-$(CONFIG_SECURITY_SAFESETID)       += safesetid/
  obj-$(CONFIG_SECURITY_LOCKDOWN_LSM)	+= lockdown/
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/fs.c ./linux-stable/security/provenance/fs.c
---- ./pristine/linux-stable/security/provenance/fs.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/fs.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/Kconfig b/security/provenance/Kconfig
+new file mode 100644
+index 000000000000..bdb3427014c5
+--- /dev/null
++++ b/security/provenance/Kconfig
+@@ -0,0 +1,32 @@
++config SECURITY_PROVENANCE
++         bool "CamFlow - Provenance"
++         depends on SECURITY
++         depends on NET
++         depends on INET
++         select RELAY
++         select SECURITY_NETWORK
++         select SECURITYFS
++         select NETFILTER
++         select CRYPTO_SHA256
++         default y
++         help
++          This selects CamFlow provenance modules. It captures provenance through
++          a Linux Security Module.
++
++config SECURITY_PROVENANCE_WHOLE_SYSTEM
++	bool "CamFlow - Whole system provenance"
++	depends on SECURITY_PROVENANCE
++	default n
++	help
++	  This option activate whole system provenance capture from boot.
++
++	  If you are unsure how to answer this question, answer N.
++
++config SECURITY_PROVENANCE_PERSISTENCE
++	bool "CamFlow - Persistence"
++	depends on SECURITY_PROVENANCE
++	default n
++	help
++	  This option persist inode provenance state across reboot.
++
++	  If you are unsure how to answer this question, answer N.
+diff --git a/security/provenance/Makefile b/security/provenance/Makefile
+new file mode 100644
+index 000000000000..4a5709eebd72
+--- /dev/null
++++ b/security/provenance/Makefile
+@@ -0,0 +1,8 @@
++#
++# Makefile for Provenance LSM
++#
++obj-$(CONFIG_SECURITY_PROVENANCE) := provenance.o
++
++provenance-y := relay.o hooks.o query.o fs.o netfilter.o propagate.o type.o machine.o memcpy_ss.o
++
++ccflags-y := -I$(srctree)/security/provenance/include
+diff --git a/security/provenance/fs.c b/security/provenance/fs.c
+new file mode 100644
+index 000000000000..4e77499e61b4
+--- /dev/null
++++ b/security/provenance/fs.c
 @@ -0,0 +1,1141 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -2491,9 +2384,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/fs.c ./linux-stable
 +	return 0;
 +}
 +fs_initcall(init_prov_fs);
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/hooks.c ./linux-stable/security/provenance/hooks.c
---- ./pristine/linux-stable/security/provenance/hooks.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/hooks.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/hooks.c b/security/provenance/hooks.c
+new file mode 100644
+index 000000000000..7bc5997e7bf1
+--- /dev/null
++++ b/security/provenance/hooks.c
 @@ -0,0 +1,2950 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -5445,9 +5340,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/hooks.c ./linux-sta
 +	.blobs = &provenance_blob_sizes,
 +	.init = provenance_init,
 +};
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/memcpy_ss.h ./linux-stable/security/provenance/include/memcpy_ss.h
---- ./pristine/linux-stable/security/provenance/include/memcpy_ss.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/memcpy_ss.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/memcpy_ss.h b/security/provenance/include/memcpy_ss.h
+new file mode 100644
+index 000000000000..71e0cda1489f
+--- /dev/null
++++ b/security/provenance/include/memcpy_ss.h
 @@ -0,0 +1,23 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -5472,9 +5369,301 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/memcpy_ss.h
 +		       __kernel_size_t smax);
 +
 +#endif // _MEMCPY_SS
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_filter.h ./linux-stable/security/provenance/include/provenance_filter.h
---- ./pristine/linux-stable/security/provenance/include/provenance_filter.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_filter.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance.h b/security/provenance/include/provenance.h
+new file mode 100644
+index 000000000000..baa9e8b91919
+--- /dev/null
++++ b/security/provenance/include/provenance.h
+@@ -0,0 +1,284 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2015-2016 University of Cambridge,
++ * Copyright (C) 2016-2017 Harvard University,
++ * Copyright (C) 2017-2018 University of Cambridge,
++ * Copyright (C) 2018-2020 University of Bristol
++ *
++ * Author: Thomas Pasquier <thomas.pasquier@bristol.ac.uk>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation; either version 2 of the License,
++ * or (at your option) any later version.
++ */
++#ifndef _PROVENANCE_H
++#define _PROVENANCE_H
++
++#include <linux/slab.h>
++#include <linux/types.h>
++#include <linux/bug.h>
++#include <linux/socket.h>
++#include <linux/lsm_hooks.h>
++#include <linux/msg.h>
++#include <linux/cred.h>
++#include <uapi/linux/mman.h>
++#include <uapi/linux/provenance.h>
++#include <uapi/linux/provenance_types.h>
++#include <uapi/linux/stat.h>
++#include <linux/fs.h>
++#include <linux/mm.h>
++#include <linux/xattr.h>
++
++#include "provenance_policy.h"
++#include "provenance_filter.h"
++#include "provenance_query.h"
++
++extern atomic64_t prov_relation_id;
++extern atomic64_t prov_node_id;
++extern uint32_t prov_machine_id;
++extern uint32_t prov_boot_id;
++extern uint32_t epoch;
++extern bool prov_written;
++
++#define prov_next_relation_id()	\
++	((uint64_t)atomic64_inc_return(&prov_relation_id))
++#define prov_next_node_id() \
++	((uint64_t)atomic64_inc_return(&prov_node_id))
++
++enum {
++	PROVENANCE_LOCK_PROC,
++	PROVENANCE_LOCK_DIR,
++	PROVENANCE_LOCK_INODE,
++	PROVENANCE_LOCK_MSG,
++	PROVENANCE_LOCK_SHM,
++	PROVENANCE_LOCK_SOCKET,
++	PROVENANCE_LOCK_SOCK
++};
++
++struct provenance {
++	union prov_elt msg;
++	spinlock_t lock;
++};
++
++#define prov_elt(provenance)            (&(provenance->msg))
++#define prov_lock(provenance)           (&(provenance->lock))
++#define prov_entry(provenance)          ((prov_entry_t *)prov_elt(provenance))
++
++#define ASSIGN_NODE_ID    0
++
++extern struct kmem_cache *provenance_cache;
++extern struct kmem_cache *long_provenance_cache;
++
++static __always_inline void init_provenance_struct(uint64_t ntype,
++						   struct provenance *prov)
++{
++	spin_lock_init(prov_lock(prov));
++	prov_type(prov_elt(prov)) = ntype;
++	node_identifier(prov_elt(prov)).id = prov_next_node_id();
++	node_identifier(prov_elt(prov)).boot_id = prov_boot_id;
++	node_identifier(prov_elt(prov)).machine_id = prov_machine_id;
++	call_provenance_alloc(prov_entry(prov));
++}
++/*!
++ * @brief Allocate memory for a new provenance node and populate
++ * "node_identifier" information.
++ *
++ * The memory is allocated from "provenance_cache".
++ * The type of the provenance node provided in the argument list must align with
++ * the allowed provenance node type (i.e., not a relation type).
++ * Allowed provenance node types are defined in
++ * "include/uapi/linux/provenance_types.h"
++ * The lock accompanied "provenance" structure is initialized as UNLOCK.
++ * Implicitly, the "version" member of "node_identifier" structure is set to 0
++ * through "zalloc".
++ * This is because the version of a new node starts from 0.
++ * @param ntype The type of the provenance node.
++ * @param gfp GFP flags used in memory allocation in the kernel
++ * @return The pointer to the provenance node (prov_elt + lock structure) or
++ * NULL if allocating memory from cache failed.
++ *
++ */
++static __always_inline struct provenance *alloc_provenance(uint64_t ntype,
++							   gfp_t gfp)
++{
++	struct provenance *prov =  kmem_cache_zalloc(provenance_cache, gfp);
++
++	BUILD_BUG_ON(!prov_type_is_node(ntype));
++
++	if (!prov)
++		return NULL;
++	init_provenance_struct(ntype, prov);
++	return prov;
++}
++
++/*!
++ * @brief Free memory of a provenance node
++ */
++static inline void free_provenance(struct provenance *prov)
++{
++	call_provenance_free(prov_entry(prov));
++	kmem_cache_free(provenance_cache, prov);
++}
++
++/*!
++ * @brief Allocate memory for a new long provenance node and set the provenance
++ * "LONG" flag (in basic_elements).
++ *
++ * Similar to "alloc_provenance" function above, this function allocate memory
++ * for long_prove_elt union structure.
++ * long_prov_elt contains more types of node structures than prov_elt.
++ * "version" member of the identifier is also implicitly set to 0 due to
++ * "zalloc".
++ * Spin lock is not needed because at most one thread will access the structure
++ * at a time, since it is a transient element.
++ * @param ntype The type of the long provenance node.
++ * @return The pointer to the long provenance node (long_prov_elt union
++ * structure) or NULL if allocating memory from cache failed.
++ * @reference GFP_ATOMIC https://www.linuxjournal.com/article/6930
++ *
++ */
++static __always_inline union long_prov_elt *alloc_long_provenance(
++	uint64_t ntype,
++	uint64_t id)
++{
++	union long_prov_elt *prov = kmem_cache_zalloc(long_provenance_cache,
++						      GFP_ATOMIC);
++
++	BUILD_BUG_ON(!prov_type_is_node(ntype));
++	BUILD_BUG_ON(!prov_type_is_long(ntype));
++
++	if (!prov)
++		return NULL;
++	prov_type(prov) = ntype;
++	if (id == 0)
++		node_identifier(prov).id = prov_next_node_id();
++	else
++		node_identifier(prov).id = id;
++	node_identifier(prov).boot_id = prov_boot_id;
++	node_identifier(prov).machine_id = prov_machine_id;
++	call_provenance_alloc(prov);
++	return prov;
++}
++
++/*!
++ * @brief Free memory of a long provenance node
++ */
++static inline void free_long_provenance(union long_prov_elt *prov)
++{
++	call_provenance_free(prov);
++	kmem_cache_free(long_provenance_cache, prov);
++}
++
++#define set_recorded(node) \
++	__set_recorded((union long_prov_elt *)node)
++static inline void __set_recorded(union long_prov_elt *node)
++{
++	node->msg_info.epoch = epoch;
++}
++
++#define clear_recorded(node) \
++	__clear_recorded((union long_prov_elt *)node)
++static inline void __clear_recorded(union long_prov_elt *node)
++{
++	node->msg_info.epoch = 0;
++}
++
++#define provenance_is_recorded(node) \
++	__provenance_is_recorded((union long_prov_elt *)node)
++static inline bool __provenance_is_recorded(union long_prov_elt *node)
++{
++	if (epoch > node->msg_info.epoch)
++		return false;
++	return true;
++}
++
++#define set_name_recorded(node)	\
++	__set_name_recorded((union long_prov_elt *)node)
++static inline void __set_name_recorded(union long_prov_elt *node)
++{
++	node->msg_info.nepoch = epoch;
++}
++
++#define clear_name_recorded(node) \
++	__clear_name_recorded((union long_prov_elt *)node)
++static inline void __clear_name_recorded(union long_prov_elt *node)
++{
++	node->msg_info.nepoch = 0;
++}
++
++#define provenance_is_name_recorded(node) \
++	__provenance_is_name_recorded((union long_prov_elt *)node)
++static inline bool __provenance_is_name_recorded(union long_prov_elt *node)
++{
++	if (epoch > node->msg_info.nepoch)
++		return false;
++	return true;
++}
++
++// reference to node representing the machine/kernel
++extern union long_prov_elt *prov_machine;
++
++#define set_kernel_recorded(node) \
++	__set_kernel_recorded((union long_prov_elt *)node)
++static inline void __set_kernel_recorded(union long_prov_elt *node)
++{
++	node_kernel_version(node) = node_identifier(prov_machine).version;
++}
++
++#define provenance_is_kernel_recorded(node) \
++	__provenance_is_kernel_recorded((union long_prov_elt *)node)
++static inline bool __provenance_is_kernel_recorded(union long_prov_elt *node)
++{
++	if (node_kernel_version(node) < node_identifier(prov_machine).version)
++		return false;
++	return true;
++}
++
++extern struct lsm_blob_sizes provenance_blob_sizes;
++static inline struct provenance *provenance_cred(const struct cred *cred)
++{
++	return cred->security + provenance_blob_sizes.lbs_cred;
++}
++
++static inline struct provenance *provenance_task(const struct task_struct *task)
++{
++	return task->security + provenance_blob_sizes.lbs_task;
++}
++
++static inline struct provenance *provenance_cred_from_task(
++	struct task_struct *task)
++{
++	struct provenance *prov;
++	const struct cred *cred = get_task_cred(task);
++
++	prov = cred->security + provenance_blob_sizes.lbs_cred;
++	put_cred(cred); // Release cred.
++	return prov;
++}
++
++static inline struct provenance *provenance_file(const struct file *file)
++{
++	return file->f_security + provenance_blob_sizes.lbs_file;
++}
++
++static inline struct provenance *provenance_inode(
++	const struct inode *inode)
++{
++	if (unlikely(!inode->i_security))
++		return NULL;
++	return inode->i_security + provenance_blob_sizes.lbs_inode;
++}
++
++static inline struct provenance *provenance_msg_msg(
++	const struct msg_msg *msg_msg)
++{
++	return msg_msg->security + provenance_blob_sizes.lbs_msg_msg;
++}
++
++static inline struct provenance *provenance_ipc(
++	const struct kern_ipc_perm *ipc)
++{
++	return ipc->security + provenance_blob_sizes.lbs_ipc;
++}
++#endif
+diff --git a/security/provenance/include/provenance_filter.h b/security/provenance/include/provenance_filter.h
+new file mode 100644
+index 000000000000..a5b2820d25ba
+--- /dev/null
++++ b/security/provenance/include/provenance_filter.h
 @@ -0,0 +1,319 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -5795,297 +5984,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +	}
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance.h ./linux-stable/security/provenance/include/provenance.h
---- ./pristine/linux-stable/security/provenance/include/provenance.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance.h	2020-04-30 06:43:40.330082778 +0000
-@@ -0,0 +1,284 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+/*
-+ * Copyright (C) 2015-2016 University of Cambridge,
-+ * Copyright (C) 2016-2017 Harvard University,
-+ * Copyright (C) 2017-2018 University of Cambridge,
-+ * Copyright (C) 2018-2020 University of Bristol
-+ *
-+ * Author: Thomas Pasquier <thomas.pasquier@bristol.ac.uk>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2, as
-+ * published by the Free Software Foundation; either version 2 of the License,
-+ * or (at your option) any later version.
-+ */
-+#ifndef _PROVENANCE_H
-+#define _PROVENANCE_H
-+
-+#include <linux/slab.h>
-+#include <linux/types.h>
-+#include <linux/bug.h>
-+#include <linux/socket.h>
-+#include <linux/lsm_hooks.h>
-+#include <linux/msg.h>
-+#include <linux/cred.h>
-+#include <uapi/linux/mman.h>
-+#include <uapi/linux/provenance.h>
-+#include <uapi/linux/provenance_types.h>
-+#include <uapi/linux/stat.h>
-+#include <linux/fs.h>
-+#include <linux/mm.h>
-+#include <linux/xattr.h>
-+
-+#include "provenance_policy.h"
-+#include "provenance_filter.h"
-+#include "provenance_query.h"
-+
-+extern atomic64_t prov_relation_id;
-+extern atomic64_t prov_node_id;
-+extern uint32_t prov_machine_id;
-+extern uint32_t prov_boot_id;
-+extern uint32_t epoch;
-+extern bool prov_written;
-+
-+#define prov_next_relation_id()	\
-+	((uint64_t)atomic64_inc_return(&prov_relation_id))
-+#define prov_next_node_id() \
-+	((uint64_t)atomic64_inc_return(&prov_node_id))
-+
-+enum {
-+	PROVENANCE_LOCK_PROC,
-+	PROVENANCE_LOCK_DIR,
-+	PROVENANCE_LOCK_INODE,
-+	PROVENANCE_LOCK_MSG,
-+	PROVENANCE_LOCK_SHM,
-+	PROVENANCE_LOCK_SOCKET,
-+	PROVENANCE_LOCK_SOCK
-+};
-+
-+struct provenance {
-+	union prov_elt msg;
-+	spinlock_t lock;
-+};
-+
-+#define prov_elt(provenance)            (&(provenance->msg))
-+#define prov_lock(provenance)           (&(provenance->lock))
-+#define prov_entry(provenance)          ((prov_entry_t *)prov_elt(provenance))
-+
-+#define ASSIGN_NODE_ID    0
-+
-+extern struct kmem_cache *provenance_cache;
-+extern struct kmem_cache *long_provenance_cache;
-+
-+static __always_inline void init_provenance_struct(uint64_t ntype,
-+						   struct provenance *prov)
-+{
-+	spin_lock_init(prov_lock(prov));
-+	prov_type(prov_elt(prov)) = ntype;
-+	node_identifier(prov_elt(prov)).id = prov_next_node_id();
-+	node_identifier(prov_elt(prov)).boot_id = prov_boot_id;
-+	node_identifier(prov_elt(prov)).machine_id = prov_machine_id;
-+	call_provenance_alloc(prov_entry(prov));
-+}
-+/*!
-+ * @brief Allocate memory for a new provenance node and populate
-+ * "node_identifier" information.
-+ *
-+ * The memory is allocated from "provenance_cache".
-+ * The type of the provenance node provided in the argument list must align with
-+ * the allowed provenance node type (i.e., not a relation type).
-+ * Allowed provenance node types are defined in
-+ * "include/uapi/linux/provenance_types.h"
-+ * The lock accompanied "provenance" structure is initialized as UNLOCK.
-+ * Implicitly, the "version" member of "node_identifier" structure is set to 0
-+ * through "zalloc".
-+ * This is because the version of a new node starts from 0.
-+ * @param ntype The type of the provenance node.
-+ * @param gfp GFP flags used in memory allocation in the kernel
-+ * @return The pointer to the provenance node (prov_elt + lock structure) or
-+ * NULL if allocating memory from cache failed.
-+ *
-+ */
-+static __always_inline struct provenance *alloc_provenance(uint64_t ntype,
-+							   gfp_t gfp)
-+{
-+	struct provenance *prov =  kmem_cache_zalloc(provenance_cache, gfp);
-+
-+	BUILD_BUG_ON(!prov_type_is_node(ntype));
-+
-+	if (!prov)
-+		return NULL;
-+	init_provenance_struct(ntype, prov);
-+	return prov;
-+}
-+
-+/*!
-+ * @brief Free memory of a provenance node
-+ */
-+static inline void free_provenance(struct provenance *prov)
-+{
-+	call_provenance_free(prov_entry(prov));
-+	kmem_cache_free(provenance_cache, prov);
-+}
-+
-+/*!
-+ * @brief Allocate memory for a new long provenance node and set the provenance
-+ * "LONG" flag (in basic_elements).
-+ *
-+ * Similar to "alloc_provenance" function above, this function allocate memory
-+ * for long_prove_elt union structure.
-+ * long_prov_elt contains more types of node structures than prov_elt.
-+ * "version" member of the identifier is also implicitly set to 0 due to
-+ * "zalloc".
-+ * Spin lock is not needed because at most one thread will access the structure
-+ * at a time, since it is a transient element.
-+ * @param ntype The type of the long provenance node.
-+ * @return The pointer to the long provenance node (long_prov_elt union
-+ * structure) or NULL if allocating memory from cache failed.
-+ * @reference GFP_ATOMIC https://www.linuxjournal.com/article/6930
-+ *
-+ */
-+static __always_inline union long_prov_elt *alloc_long_provenance(
-+	uint64_t ntype,
-+	uint64_t id)
-+{
-+	union long_prov_elt *prov = kmem_cache_zalloc(long_provenance_cache,
-+						      GFP_ATOMIC);
-+
-+	BUILD_BUG_ON(!prov_type_is_node(ntype));
-+	BUILD_BUG_ON(!prov_type_is_long(ntype));
-+
-+	if (!prov)
-+		return NULL;
-+	prov_type(prov) = ntype;
-+	if (id == 0)
-+		node_identifier(prov).id = prov_next_node_id();
-+	else
-+		node_identifier(prov).id = id;
-+	node_identifier(prov).boot_id = prov_boot_id;
-+	node_identifier(prov).machine_id = prov_machine_id;
-+	call_provenance_alloc(prov);
-+	return prov;
-+}
-+
-+/*!
-+ * @brief Free memory of a long provenance node
-+ */
-+static inline void free_long_provenance(union long_prov_elt *prov)
-+{
-+	call_provenance_free(prov);
-+	kmem_cache_free(long_provenance_cache, prov);
-+}
-+
-+#define set_recorded(node) \
-+	__set_recorded((union long_prov_elt *)node)
-+static inline void __set_recorded(union long_prov_elt *node)
-+{
-+	node->msg_info.epoch = epoch;
-+}
-+
-+#define clear_recorded(node) \
-+	__clear_recorded((union long_prov_elt *)node)
-+static inline void __clear_recorded(union long_prov_elt *node)
-+{
-+	node->msg_info.epoch = 0;
-+}
-+
-+#define provenance_is_recorded(node) \
-+	__provenance_is_recorded((union long_prov_elt *)node)
-+static inline bool __provenance_is_recorded(union long_prov_elt *node)
-+{
-+	if (epoch > node->msg_info.epoch)
-+		return false;
-+	return true;
-+}
-+
-+#define set_name_recorded(node)	\
-+	__set_name_recorded((union long_prov_elt *)node)
-+static inline void __set_name_recorded(union long_prov_elt *node)
-+{
-+	node->msg_info.nepoch = epoch;
-+}
-+
-+#define clear_name_recorded(node) \
-+	__clear_name_recorded((union long_prov_elt *)node)
-+static inline void __clear_name_recorded(union long_prov_elt *node)
-+{
-+	node->msg_info.nepoch = 0;
-+}
-+
-+#define provenance_is_name_recorded(node) \
-+	__provenance_is_name_recorded((union long_prov_elt *)node)
-+static inline bool __provenance_is_name_recorded(union long_prov_elt *node)
-+{
-+	if (epoch > node->msg_info.nepoch)
-+		return false;
-+	return true;
-+}
-+
-+// reference to node representing the machine/kernel
-+extern union long_prov_elt *prov_machine;
-+
-+#define set_kernel_recorded(node) \
-+	__set_kernel_recorded((union long_prov_elt *)node)
-+static inline void __set_kernel_recorded(union long_prov_elt *node)
-+{
-+	node_kernel_version(node) = node_identifier(prov_machine).version;
-+}
-+
-+#define provenance_is_kernel_recorded(node) \
-+	__provenance_is_kernel_recorded((union long_prov_elt *)node)
-+static inline bool __provenance_is_kernel_recorded(union long_prov_elt *node)
-+{
-+	if (node_kernel_version(node) < node_identifier(prov_machine).version)
-+		return false;
-+	return true;
-+}
-+
-+extern struct lsm_blob_sizes provenance_blob_sizes;
-+static inline struct provenance *provenance_cred(const struct cred *cred)
-+{
-+	return cred->security + provenance_blob_sizes.lbs_cred;
-+}
-+
-+static inline struct provenance *provenance_task(const struct task_struct *task)
-+{
-+	return task->security + provenance_blob_sizes.lbs_task;
-+}
-+
-+static inline struct provenance *provenance_cred_from_task(
-+	struct task_struct *task)
-+{
-+	struct provenance *prov;
-+	const struct cred *cred = get_task_cred(task);
-+
-+	prov = cred->security + provenance_blob_sizes.lbs_cred;
-+	put_cred(cred); // Release cred.
-+	return prov;
-+}
-+
-+static inline struct provenance *provenance_file(const struct file *file)
-+{
-+	return file->f_security + provenance_blob_sizes.lbs_file;
-+}
-+
-+static inline struct provenance *provenance_inode(
-+	const struct inode *inode)
-+{
-+	if (unlikely(!inode->i_security))
-+		return NULL;
-+	return inode->i_security + provenance_blob_sizes.lbs_inode;
-+}
-+
-+static inline struct provenance *provenance_msg_msg(
-+	const struct msg_msg *msg_msg)
-+{
-+	return msg_msg->security + provenance_blob_sizes.lbs_msg_msg;
-+}
-+
-+static inline struct provenance *provenance_ipc(
-+	const struct kern_ipc_perm *ipc)
-+{
-+	return ipc->security + provenance_blob_sizes.lbs_ipc;
-+}
-+#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_inode.h ./linux-stable/security/provenance/include/provenance_inode.h
---- ./pristine/linux-stable/security/provenance/include/provenance_inode.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_inode.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_inode.h b/security/provenance/include/provenance_inode.h
+new file mode 100644
+index 000000000000..b5e3b9b8862a
+--- /dev/null
++++ b/security/provenance/include/provenance_inode.h
 @@ -0,0 +1,604 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -6691,9 +6594,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +	return av;
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_machine.h ./linux-stable/security/provenance/include/provenance_machine.h
---- ./pristine/linux-stable/security/provenance/include/provenance_machine.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_machine.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_machine.h b/security/provenance/include/provenance_machine.h
+new file mode 100644
+index 000000000000..1e2d98bce563
+--- /dev/null
++++ b/security/provenance/include/provenance_machine.h
 @@ -0,0 +1,24 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -6719,9 +6624,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +void init_prov_machine(void);
 +void refresh_prov_machine(void);
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_net.h ./linux-stable/security/provenance/include/provenance_net.h
---- ./pristine/linux-stable/security/provenance/include/provenance_net.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_net.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_net.h b/security/provenance/include/provenance_net.h
+new file mode 100644
+index 000000000000..45561824901b
+--- /dev/null
++++ b/security/provenance/include/provenance_net.h
 @@ -0,0 +1,414 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -7137,9 +7044,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +	return 0;
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_ns.h ./linux-stable/security/provenance/include/provenance_ns.h
---- ./pristine/linux-stable/security/provenance/include/provenance_ns.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_ns.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_ns.h b/security/provenance/include/provenance_ns.h
+new file mode 100644
+index 000000000000..4fa2f4a3b9fb
+--- /dev/null
++++ b/security/provenance/include/provenance_ns.h
 @@ -0,0 +1,139 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -7280,9 +7189,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +	return 0;
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_policy.h ./linux-stable/security/provenance/include/provenance_policy.h
---- ./pristine/linux-stable/security/provenance/include/provenance_policy.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_policy.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_policy.h b/security/provenance/include/provenance_policy.h
+new file mode 100644
+index 000000000000..091b9e074cf8
+--- /dev/null
++++ b/security/provenance/include/provenance_policy.h
 @@ -0,0 +1,62 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -7346,9 +7257,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +extern struct capture_policy prov_policy;
 +
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_query.h ./linux-stable/security/provenance/include/provenance_query.h
---- ./pristine/linux-stable/security/provenance/include/provenance_query.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_query.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_query.h b/security/provenance/include/provenance_query.h
+new file mode 100644
+index 000000000000..be6ba43eee62
+--- /dev/null
++++ b/security/provenance/include/provenance_query.h
 @@ -0,0 +1,97 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -7447,9 +7360,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +	return 0;
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_record.h ./linux-stable/security/provenance/include/provenance_record.h
---- ./pristine/linux-stable/security/provenance/include/provenance_record.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_record.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_record.h b/security/provenance/include/provenance_record.h
+new file mode 100644
+index 000000000000..6a79cb49cc72
+--- /dev/null
++++ b/security/provenance/include/provenance_record.h
 @@ -0,0 +1,581 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -8032,9 +7947,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +	__write_node(prov_machine);
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_relay.h ./linux-stable/security/provenance/include/provenance_relay.h
---- ./pristine/linux-stable/security/provenance/include/provenance_relay.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_relay.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_relay.h b/security/provenance/include/provenance_relay.h
+new file mode 100644
+index 000000000000..230c2d204b23
+--- /dev/null
++++ b/security/provenance/include/provenance_relay.h
 @@ -0,0 +1,188 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -8224,9 +8141,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +	return rc;
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_task.h ./linux-stable/security/provenance/include/provenance_task.h
---- ./pristine/linux-stable/security/provenance/include/provenance_task.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/include/provenance_task.h	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/include/provenance_task.h b/security/provenance/include/provenance_task.h
+new file mode 100644
+index 000000000000..bac473888ea4
+--- /dev/null
++++ b/security/provenance/include/provenance_task.h
 @@ -0,0 +1,656 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
@@ -8884,45 +8803,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/include/provenance_
 +	return 0;
 +}
 +#endif
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/Kconfig ./linux-stable/security/provenance/Kconfig
---- ./pristine/linux-stable/security/provenance/Kconfig	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/Kconfig	2020-04-30 06:43:40.330082778 +0000
-@@ -0,0 +1,32 @@
-+config SECURITY_PROVENANCE
-+         bool "CamFlow - Provenance"
-+         depends on SECURITY
-+         depends on NET
-+         depends on INET
-+         select RELAY
-+         select SECURITY_NETWORK
-+         select SECURITYFS
-+         select NETFILTER
-+         select CRYPTO_SHA256
-+         default y
-+         help
-+          This selects CamFlow provenance modules. It captures provenance through
-+          a Linux Security Module.
-+
-+config SECURITY_PROVENANCE_WHOLE_SYSTEM
-+	bool "CamFlow - Whole system provenance"
-+	depends on SECURITY_PROVENANCE
-+	default n
-+	help
-+	  This option activate whole system provenance capture from boot.
-+
-+	  If you are unsure how to answer this question, answer N.
-+
-+config SECURITY_PROVENANCE_PERSISTENCE
-+	bool "CamFlow - Persistence"
-+	depends on SECURITY_PROVENANCE
-+	default n
-+	help
-+	  This option persist inode provenance state across reboot.
-+
-+	  If you are unsure how to answer this question, answer N.
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/machine.c ./linux-stable/security/provenance/machine.c
---- ./pristine/linux-stable/security/provenance/machine.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/machine.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/machine.c b/security/provenance/machine.c
+new file mode 100644
+index 000000000000..c3b9435079e5
+--- /dev/null
++++ b/security/provenance/machine.c
 @@ -0,0 +1,51 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -8975,21 +8860,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/machine.c ./linux-s
 +	refresh_prov_machine();
 +	call_provenance_alloc(prov_machine);
 +}
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/Makefile ./linux-stable/security/provenance/Makefile
---- ./pristine/linux-stable/security/provenance/Makefile	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/Makefile	2020-04-30 06:43:40.330082778 +0000
-@@ -0,0 +1,8 @@
-+#
-+# Makefile for Provenance LSM
-+#
-+obj-$(CONFIG_SECURITY_PROVENANCE) := provenance.o
-+
-+provenance-y := relay.o hooks.o query.o fs.o netfilter.o propagate.o type.o machine.o memcpy_ss.o
-+
-+ccflags-y := -I$(srctree)/security/provenance/include
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/memcpy_ss.c ./linux-stable/security/provenance/memcpy_ss.c
---- ./pristine/linux-stable/security/provenance/memcpy_ss.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/memcpy_ss.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/memcpy_ss.c b/security/provenance/memcpy_ss.c
+new file mode 100644
+index 000000000000..7f112f630450
+--- /dev/null
++++ b/security/provenance/memcpy_ss.c
 @@ -0,0 +1,66 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -9057,9 +8932,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/memcpy_ss.c ./linux
 +	memcpy(dp, sp, smax);
 +	return 0;
 +}
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/netfilter.c ./linux-stable/security/provenance/netfilter.c
---- ./pristine/linux-stable/security/provenance/netfilter.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/netfilter.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/netfilter.c b/security/provenance/netfilter.c
+new file mode 100644
+index 000000000000..a944770a7f53
+--- /dev/null
++++ b/security/provenance/netfilter.c
 @@ -0,0 +1,117 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -9178,9 +9055,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/netfilter.c ./linux
 +
 +module_init(provenance_nf_ip_init);
 +module_exit(provenance_nf_ip_exit);
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/propagate.c ./linux-stable/security/provenance/propagate.c
---- ./pristine/linux-stable/security/provenance/propagate.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/propagate.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/propagate.c b/security/provenance/propagate.c
+new file mode 100644
+index 000000000000..f63a8f46427d
+--- /dev/null
++++ b/security/provenance/propagate.c
 @@ -0,0 +1,43 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -9225,9 +9104,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/propagate.c ./linux
 +	pr_info("Provenance: propagate ready.\n");
 +	return 0;
 +}
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/query.c ./linux-stable/security/provenance/query.c
---- ./pristine/linux-stable/security/provenance/query.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/query.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/query.c b/security/provenance/query.c
+new file mode 100644
+index 000000000000..5126ad2828d3
+--- /dev/null
++++ b/security/provenance/query.c
 @@ -0,0 +1,49 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -9278,9 +9159,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/query.c ./linux-sta
 +	return 0;
 +}
 +EXPORT_SYMBOL_GPL(unregister_provenance_query_hooks);
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/relay.c ./linux-stable/security/provenance/relay.c
---- ./pristine/linux-stable/security/provenance/relay.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/relay.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/relay.c b/security/provenance/relay.c
+new file mode 100644
+index 000000000000..5a7e37e899b8
+--- /dev/null
++++ b/security/provenance/relay.c
 @@ -0,0 +1,440 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -9722,9 +9605,11 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/relay.c ./linux-sta
 +	return 0;
 +}
 +fs_initcall(relay_prov_init);
-diff -uprN -b -B ./pristine/linux-stable/security/provenance/type.c ./linux-stable/security/provenance/type.c
---- ./pristine/linux-stable/security/provenance/type.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./linux-stable/security/provenance/type.c	2020-04-30 06:43:40.330082778 +0000
+diff --git a/security/provenance/type.c b/security/provenance/type.c
+new file mode 100644
+index 000000000000..a15c62e5659b
+--- /dev/null
++++ b/security/provenance/type.c
 @@ -0,0 +1,588 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
@@ -10314,56 +10199,6 @@ diff -uprN -b -B ./pristine/linux-stable/security/provenance/type.c ./linux-stab
 +	return 0;
 +}
 +EXPORT_SYMBOL_GPL(node_id);
-diff -uprN -b -B ./pristine/linux-stable/security/security.c ./linux-stable/security/security.c
---- ./pristine/linux-stable/security/security.c	2020-04-30 06:42:37.125573537 +0000
-+++ ./linux-stable/security/security.c	2020-04-30 06:43:39.416075188 +0000
-@@ -2400,6 +2400,49 @@ int security_audit_rule_match(u32 secid,
- }
- #endif /* CONFIG_AUDIT */
- 
-+#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
-+void security_mmap_munmap(struct mm_struct *mm,
-+					struct vm_area_struct *vma,
-+					unsigned long start, unsigned long end)
-+{
-+	call_void_hook(mmap_munmap, mm, vma, start, end);
-+}
-+
-+int security_file_splice_pipe_to_pipe(struct file *in,
-+						    struct file *out)
-+{
-+	return call_int_hook(file_splice_pipe_to_pipe, 0, in, out);
-+}
-+
-+int security_mq_timedsend(struct inode *inode, struct msg_msg *msg,
-+				size_t msg_len, struct timespec64 *ts)
-+{
-+	return call_int_hook(mq_timedsend, 0, inode, msg, ts);
-+}
-+
-+int security_mq_timedreceive(struct inode *inode, struct msg_msg *msg,
-+				size_t msg_len, struct timespec64 *ts)
-+{
-+	return call_int_hook(mq_timedreceive, 0, inode, msg, ts);
-+}
-+
-+void security_shm_shmdt(struct kern_ipc_perm *shp)
-+{
-+	call_void_hook(shm_shmdt, shp);
-+}
-+
-+int security_socket_sendmsg_always(struct socket *sock, struct msghdr *msg, int size)
-+{
-+	return call_int_hook(socket_sendmsg_always, 0, sock, msg, size);
-+}
-+
-+int security_socket_recvmsg_always(struct socket *sock, struct msghdr *msg,
-+			    int size, int flags)
-+{
-+	return call_int_hook(socket_recvmsg_always, 0, sock, msg, size, flags);
-+}
-+#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
-+
- #ifdef CONFIG_BPF_SYSCALL
- int security_bpf(int cmd, union bpf_attr *attr, unsigned int size)
- {
+-- 
+2.25.4
+

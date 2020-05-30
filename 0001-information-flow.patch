@@ -1,0 +1,369 @@
+From c489d78d6684e5a46a0bde2dd99229b38e4f9706 Mon Sep 17 00:00:00 2001
+From: Thomas Pasquier <thomas.francis.pasquier@gmail.com>
+Date: Sat, 30 May 2020 11:20:44 +0000
+Subject: [PATCH] information flow
+
+Signed-off-by: Thomas Pasquier <thomas.francis.pasquier@gmail.com>
+---
+ fs/splice.c               | 24 +++++++++++++++++
+ include/linux/lsm_hooks.h | 26 ++++++++++++++++++
+ include/linux/security.h  | 56 +++++++++++++++++++++++++++++++++++++++
+ ipc/mqueue.c              | 12 +++++++++
+ ipc/shm.c                 |  8 ++++++
+ mm/mmap.c                 |  7 +++++
+ net/socket.c              | 16 ++++++++++-
+ security/Kconfig          |  9 ++++++-
+ security/security.c       | 43 ++++++++++++++++++++++++++++++
+ 9 files changed, 199 insertions(+), 2 deletions(-)
+
+diff --git a/fs/splice.c b/fs/splice.c
+index d671936d0aad..82a9b76c3dea 100644
+--- a/fs/splice.c
++++ b/fs/splice.c
+@@ -1135,6 +1135,12 @@ static long do_splice(struct file *in, loff_t __user *off_in,
+ 		if (ipipe == opipe)
+ 			return -EINVAL;
+ 
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++		ret = security_file_splice_pipe_to_pipe(in, out);
++		if (ret)
++			return ret;
++#endif
++
+ 		if ((in->f_flags | out->f_flags) & O_NONBLOCK)
+ 			flags |= SPLICE_F_NONBLOCK;
+ 
+@@ -1289,6 +1295,12 @@ static long vmsplice_to_user(struct file *file, struct iov_iter *iter,
+ 	if (!pipe)
+ 		return -EBADF;
+ 
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++	ret = security_file_permission(file, MAY_READ);
++	if (ret)
++		return ret;
++#endif
++
+ 	if (sd.total_len) {
+ 		pipe_lock(pipe);
+ 		ret = __splice_from_pipe(pipe, &sd, pipe_to_user);
+@@ -1317,6 +1329,12 @@ static long vmsplice_to_pipe(struct file *file, struct iov_iter *iter,
+ 	if (!pipe)
+ 		return -EBADF;
+ 
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++	ret = security_file_permission(file, MAY_WRITE);
++	if (ret)
++		return ret;
++#endif
++
+ 	pipe_lock(pipe);
+ 	ret = wait_for_space(pipe, flags);
+ 	if (!ret)
+@@ -1775,6 +1793,12 @@ static long do_tee(struct file *in, struct file *out, size_t len,
+ 	 * copying the data.
+ 	 */
+ 	if (ipipe && opipe && ipipe != opipe) {
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++		ret = security_file_splice_pipe_to_pipe(in, out);
++		if (ret)
++			return ret;
++#endif
++
+ 		if ((in->f_flags | out->f_flags) & O_NONBLOCK)
+ 			flags |= SPLICE_F_NONBLOCK;
+ 
+diff --git a/include/linux/lsm_hooks.h b/include/linux/lsm_hooks.h
+index 20d8cf194fb7..9185b6d1909c 100644
+--- a/include/linux/lsm_hooks.h
++++ b/include/linux/lsm_hooks.h
+@@ -1807,6 +1807,23 @@ union security_list_options {
+ 	void (*audit_rule_free)(void *lsmrule);
+ #endif /* CONFIG_AUDIT */
+ 
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++  void (*mmap_munmap)(struct mm_struct *mm,
++  				struct vm_area_struct *vma,
++  				unsigned long start, unsigned long end);
++  int (*file_splice_pipe_to_pipe)(struct file *in,
++  				struct file *out);
++  int (*mq_timedsend)(struct inode *inode, struct msg_msg *msg,
++  			struct timespec64 *ts);
++  int (*mq_timedreceive)(struct inode *inode, struct msg_msg *msg,
++  			struct timespec64 *ts);
++  void (*shm_shmdt)(struct kern_ipc_perm *shp);
++  int (*socket_sendmsg_always)(struct socket *sock, struct msghdr *msg,
++  				int size);
++  int (*socket_recvmsg_always)(struct socket *sock, struct msghdr *msg,
++  				int size, int flags);
++#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
++
+ #ifdef CONFIG_BPF_SYSCALL
+ 	int (*bpf)(int cmd, union bpf_attr *attr,
+ 				 unsigned int size);
+@@ -2058,6 +2075,15 @@ struct security_hook_heads {
+ 	struct hlist_head audit_rule_match;
+ 	struct hlist_head audit_rule_free;
+ #endif /* CONFIG_AUDIT */
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++	struct hlist_head mmap_munmap;
++	struct hlist_head file_splice_pipe_to_pipe;
++	struct hlist_head mq_timedsend;
++	struct hlist_head mq_timedreceive;
++	struct hlist_head shm_shmdt;
++	struct hlist_head socket_sendmsg_always;
++	struct hlist_head socket_recvmsg_always;
++#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
+ #ifdef CONFIG_BPF_SYSCALL
+ 	struct hlist_head bpf;
+ 	struct hlist_head bpf_map;
+diff --git a/include/linux/security.h b/include/linux/security.h
+index 64b19f050343..3161adadfbe6 100644
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -1899,6 +1899,62 @@ static inline void security_bpf_prog_free(struct bpf_prog_aux *aux)
+ #endif /* CONFIG_SECURITY */
+ #endif /* CONFIG_BPF_SYSCALL */
+ 
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++#ifdef CONFIG_SECURITY
++void security_shm_shmdt(struct kern_ipc_perm *shp);
++int security_mq_timedsend(struct inode *inode, struct msg_msg *msg,
++				size_t msg_len, struct timespec64 *ts);
++int security_mq_timedreceive(struct inode *inode, struct msg_msg *msg,
++				size_t msg_len, struct timespec64 *ts);
++int security_socket_sendmsg_always(struct socket *sock, struct msghdr *msg,
++				int size);
++int security_socket_recvmsg_always(struct socket *sock, struct msghdr *msg,
++			  int size, int flags);
++void security_mmap_munmap(struct mm_struct *mm, struct vm_area_struct *vma,
++			  unsigned long start, unsigned long end);
++int security_file_splice_pipe_to_pipe(struct file *in, struct file *out);
++#else
++static inline void security_mmap_munmap(struct mm_struct *mm,
++					struct vm_area_struct *vma,
++					unsigned long start, unsigned long end)
++{ }
++
++static inline int security_file_splice_pipe_to_pipe(struct file *in,
++						    struct file *out)
++{
++	return 0;
++}
++
++static inline int security_mq_timedsend(struct inode *inode,
++			struct msg_msg *msg, size_t msg_len, struct timespec64 *ts)
++{
++	return 0;
++}
++
++static inline int security_mq_timedreceive(struct inode *inode,
++			struct msg_msg *msg, size_t msg_len, struct timespec64 *ts)
++{
++	return 0;
++}
++
++static inline void security_shm_shmdt(struct kern_ipc_perm *shp)
++{ }
++
++static inline int security_socket_sendmsg_always(struct socket *sock,
++					  struct msghdr *msg, int size)
++{
++	return 0;
++}
++
++static inline int security_socket_recvmsg_always(struct socket *sock,
++					  struct msghdr *msg, int size,
++					  int flags)
++{
++	return 0;
++}
++#endif /* CONFIG_SECURITY */
++#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
++
+ #ifdef CONFIG_PERF_EVENTS
+ struct perf_event_attr;
+ struct perf_event;
+diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+index 3ba0ea3d5920..e0d7a27d2dc5 100644
+--- a/ipc/mqueue.c
++++ b/ipc/mqueue.c
+@@ -1101,6 +1101,11 @@ static int do_mq_timedsend(mqd_t mqdes, const char __user *u_msg_ptr,
+ 	msg_ptr->m_ts = msg_len;
+ 	msg_ptr->m_type = msg_prio;
+ 
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++	ret = security_mq_timedsend(inode, msg_ptr, msg_len, timeout ? ts : NULL);
++	if (ret)
++		goto out_free;
++#endif
+ 	/*
+ 	 * msg_insert really wants us to have a valid, spare node struct so
+ 	 * it doesn't have to kmalloc a GFP_ATOMIC allocation, but it will
+@@ -1252,6 +1257,13 @@ static int do_mq_timedreceive(mqd_t mqdes, char __user *u_msg_ptr,
+ 		ret = 0;
+ 	}
+ 	if (ret == 0) {
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++		ret = security_mq_timedreceive(inode, msg_ptr, msg_len, timeout ? ts : NULL);
++		if(ret) {
++			free_msg(msg_ptr);
++			goto out_fput;
++		}
++#endif
+ 		ret = msg_ptr->m_ts;
+ 
+ 		if ((u_msg_prio && put_user(msg_ptr->m_type, u_msg_prio)) ||
+diff --git a/ipc/shm.c b/ipc/shm.c
+index ce1ca9f7c6e9..b9a31803b5a2 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -340,6 +340,14 @@ static void shm_close(struct vm_area_struct *vma)
+ 	ipc_update_pid(&shp->shm_lprid, task_tgid(current));
+ 	shp->shm_dtim = ktime_get_real_seconds();
+ 	shp->shm_nattch--;
++
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++	/* the security module return value is ignored, the purpose of this hook
++	 * is only to let the module know the memory segment is being detached
++	 */
++	security_shm_shmdt(&shp->shm_perm);
++#endif
++
+ 	if (shm_may_destroy(ns, shp))
+ 		shm_destroy(ns, shp);
+ 	else
+diff --git a/mm/mmap.c b/mm/mmap.c
+index d681a20eb4ea..28bf0f02c2d0 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -2761,6 +2761,13 @@ int __do_munmap(struct mm_struct *mm, unsigned long start, size_t len,
+ 		prev = vma;
+ 	}
+ 
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++	/* The return value is ignored, this LSM hook is only used to let the
++	 * security module know that the memory is being unmapped
++	 */
++	security_mmap_munmap(mm, vma, start, end);
++#endif
++
+ 	/* Does it split the last one? */
+ 	last = find_vma(mm, end);
+ 	if (last && end > last->vm_start) {
+diff --git a/net/socket.c b/net/socket.c
+index 2eecf1517f76..93f0ceb6c5d3 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -649,9 +649,18 @@ INDIRECT_CALLABLE_DECLARE(int inet6_sendmsg(struct socket *, struct msghdr *,
+ 					    size_t));
+ static inline int sock_sendmsg_nosec(struct socket *sock, struct msghdr *msg)
+ {
+-	int ret = INDIRECT_CALL_INET(sock->ops->sendmsg, inet6_sendmsg,
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++	int ret = security_socket_sendmsg_always(sock, msg, msg_data_left(msg));
++	if (ret)
++		return ret;
++	ret = INDIRECT_CALL_INET(sock->ops->sendmsg, inet6_sendmsg,
+ 				     inet_sendmsg, sock, msg,
+ 				     msg_data_left(msg));
++#else
++	int ret = INDIRECT_CALL_INET(sock->ops->sendmsg, inet6_sendmsg,
++						 inet_sendmsg, sock, msg,
++						 msg_data_left(msg));
++#endif
+ 	BUG_ON(ret == -EIOCBQUEUED);
+ 	return ret;
+ }
+@@ -883,6 +892,11 @@ INDIRECT_CALLABLE_DECLARE(int inet6_recvmsg(struct socket *, struct msghdr *,
+ static inline int sock_recvmsg_nosec(struct socket *sock, struct msghdr *msg,
+ 				     int flags)
+ {
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++	int err = security_socket_recvmsg_always(sock, msg, msg_data_left(msg), flags);
++	if (err)
++		return err;
++#endif
+ 	return INDIRECT_CALL_INET(sock->ops->recvmsg, inet6_recvmsg,
+ 				  inet_recvmsg, sock, msg, msg_data_left(msg),
+ 				  flags);
+diff --git a/security/Kconfig b/security/Kconfig
+index 2a1a2d396228..c736ea7f1593 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -230,6 +230,14 @@ config STATIC_USERMODEHELPER_PATH
+ 	  If you wish for all usermode helper programs to be disabled,
+ 	  specify an empty string here (i.e. "").
+ 
++config SECURITY_FLOW_FRIENDLY
++	bool "Security hooks for information flow mechanisms."
++	default y
++	help
++		This option adds hooks to support information flow mechanisms. Some
++		information flow are not captured by LSM as it was designed for access
++		control.
++
+ source "security/selinux/Kconfig"
+ source "security/smack/Kconfig"
+ source "security/tomoyo/Kconfig"
+@@ -292,4 +300,3 @@ config LSM
+ source "security/Kconfig.hardening"
+ 
+ endmenu
+-
+diff --git a/security/security.c b/security/security.c
+index 565bc9b67276..d1daa5fb7eed 100644
+--- a/security/security.c
++++ b/security/security.c
+@@ -2400,6 +2400,49 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule)
+ }
+ #endif /* CONFIG_AUDIT */
+ 
++#ifdef CONFIG_SECURITY_FLOW_FRIENDLY
++void security_mmap_munmap(struct mm_struct *mm,
++					struct vm_area_struct *vma,
++					unsigned long start, unsigned long end)
++{
++	call_void_hook(mmap_munmap, mm, vma, start, end);
++}
++
++int security_file_splice_pipe_to_pipe(struct file *in,
++						    struct file *out)
++{
++	return call_int_hook(file_splice_pipe_to_pipe, 0, in, out);
++}
++
++int security_mq_timedsend(struct inode *inode, struct msg_msg *msg,
++				size_t msg_len, struct timespec64 *ts)
++{
++	return call_int_hook(mq_timedsend, 0, inode, msg, ts);
++}
++
++int security_mq_timedreceive(struct inode *inode, struct msg_msg *msg,
++				size_t msg_len, struct timespec64 *ts)
++{
++	return call_int_hook(mq_timedreceive, 0, inode, msg, ts);
++}
++
++void security_shm_shmdt(struct kern_ipc_perm *shp)
++{
++	call_void_hook(shm_shmdt, shp);
++}
++
++int security_socket_sendmsg_always(struct socket *sock, struct msghdr *msg, int size)
++{
++	return call_int_hook(socket_sendmsg_always, 0, sock, msg, size);
++}
++
++int security_socket_recvmsg_always(struct socket *sock, struct msghdr *msg,
++			    int size, int flags)
++{
++	return call_int_hook(socket_recvmsg_always, 0, sock, msg, size, flags);
++}
++#endif /* CONFIG_SECURITY_FLOW_FRIENDLY */
++
+ #ifdef CONFIG_BPF_SYSCALL
+ int security_bpf(int cmd, union bpf_attr *attr, unsigned int size)
+ {
+-- 
+2.25.4
+
