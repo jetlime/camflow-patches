@@ -1,6 +1,7 @@
 kernel-version=5.6.7
 lsm-version=0.6.6
 fedora-version=31
+ubuntu-version='bionic'
 arch=x86_64
 
 prepare:
@@ -65,27 +66,9 @@ compile:
 	cd ./build/linux-stable && $(MAKE) -j16
 	cd ./build/linux-stable && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
 
-rpm:
-	echo "Starting building rpm packages..."
-	cd ./build/linux-stable && $(MAKE) -j16 rpm-pkg
-
 deb:
 	echo "Starting to build deb packages..."
 	cd ./build/linux-stable && $(MAKE) -j 16 deb-pkg
-
-move_local:
-	echo "Preparing packages..."
-	mkdir -p output
-	mv -f /home/$(USER)/rpmbuild/RPMS/x86_64/*.rpm ./output
-	mv -f /home/$(USER)/rpmbuild/SRPMS/*.rpm ./output
-	mv -f build/*.deb ./output
-
-move_rpm:
-	echo "Preparing packages..."
-	mkdir -p output
-	mv -f /root/rpmbuild/RPMS/x86_64/*.rpm ./output
-	mv -f /root/rpmbuild/SRPMS/*.rpm ./output
-	cd output && ls
 
 move_deb:
 	echo "Preparing packages..."
@@ -95,15 +78,13 @@ move_deb:
 
 publish:
 	cd ./output && ls
-	cd ./output && rename -v -f 's/$(lsm-version)\+-[1-9]/$(lsm-version)/gi' *.rpm
-	cd ./output && ls
-	cd ./output && package_cloud push camflow/provenance/fedora/31 kernel-headers-$(kernel-version)camflow$(lsm-version).x86_64.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/31 kernel-$(kernel-version)camflow$(lsm-version).x86_64.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/31 kernel-$(kernel-version)camflow$(lsm-version).src.rpm
-	cd ./output && package_cloud push camflow/provenance/fedora/31 kernel-devel-$(kernel-version)camflow$(lsm-version).x86_64.rpm
-	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-headers-$(kernel-version)camflow$(lsm-version)+_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
-	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-image-$(kernel-version)camflow$(lsm-version)+_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
-	cd ./output && package_cloud push camflow/provenance/ubuntu/bionic linux-libc-dev_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
+	cd ./output && package_cloud push camflow/provenance/fedora/$(fedora-version) kernel-headers-$(kernel-version)camflow$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/$(fedora-version) kernel-$(kernel-version)camflow$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/$(fedora-version) kernel-$(kernel-version)camflow$(lsm-version).src.rpm
+	cd ./output && package_cloud push camflow/provenance/fedora/$(fedora-version) kernel-devel-$(kernel-version)camflow$(lsm-version).x86_64.rpm
+	cd ./output && package_cloud push camflow/provenance/ubuntu/$(ubuntu-version) linux-headers-$(kernel-version)camflow$(lsm-version)+_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
+	cd ./output && package_cloud push camflow/provenance/ubuntu/$(ubuntu-version) linux-image-$(kernel-version)camflow$(lsm-version)+_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
+	cd ./output && package_cloud push camflow/provenance/ubuntu/$(ubuntu-version) linux-libc-dev_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
 
 install:
 	cd ./build/linux-stable && sudo $(MAKE) modules_install
@@ -120,6 +101,7 @@ fedora:
 	cd build/kernel && sudo dnf -y builddep kernel.spec
 	cd build/kernel && ./scripts/newpatch.sh ../../0001-information-flow.patch
 	cd build/kernel && ./scripts/newpatch.sh ../../0002-camflow.patch
+	cd build/kernel && sed -i -e "s/%define buildid .0002_camflow.patch/%define buildid .camflow/g" kernel.spec
 	./scripts/prep_config.sh
 	cd build/kernel && make release
 	cd build/kernel && fedpkg prep
