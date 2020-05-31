@@ -116,6 +116,7 @@ jobs:
   fedora_package:
     docker:
       - image: fedora:31
+    resource_class: large
     working_directory: ~/circulate
     steps:
       - checkout
