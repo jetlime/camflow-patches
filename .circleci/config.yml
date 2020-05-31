@@ -127,16 +127,18 @@ jobs:
       - run:
           command: |
             mkdir -p /tmp/build-logs
+            mkdir -p /tmp/rpm
             cp /root/circulate/build/kernel/.build-*.log /tmp/build-logs/build.log
+            cp /root/circulate/build/kernel/kernel-*.rpm /tmp/rmps/
+            cp /root/circulate/build/kernel/x86_64/kernel-*.rpm /tmp/rmps/
           when: always
       - run:
           command: 'df -h'
           when: always
-      - run:
-          command: './test-packages.sh'
-          when: always
       - store_artifacts:
           path: /tmp/build-logs
+      - store_artifacts:
+          path: /tmp/rpms
   publish:
     docker:
       - image: kernelci/build-gcc-8_x86:latest

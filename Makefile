@@ -123,6 +123,6 @@ fedora:
 	./prep_config.sh
 	cd build/kernel && make release
 	cd build/kernel && fedpkg prep
-	cd build/kernel && fedpkg local
+	cd build/kernel && fedpkg --verbose --debug local
 	mkdir -p output
 	mv -f ./build/kernel/x86_64/*.rpm ./output
