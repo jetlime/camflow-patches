@@ -49,11 +49,6 @@ config_travis:
 	cd ./build/linux-stable && $(MAKE) oldconfig
 	cd ./build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
 
-config_circle_fedora:
-	cd ./build/linux-stable && cp ../../.config_fedora .config
-	cd ./build/linux-stable && $(MAKE) olddefconfig
-	cd ./build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
-
 config_circle_ubuntu:
 	cd ./build/linux-stable && cp ../../.config_ubuntu .config
 	cd ./build/linux-stable && $(MAKE) olddefconfig
