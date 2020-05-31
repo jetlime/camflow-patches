@@ -120,7 +120,7 @@ fedora:
 	cd build/kernel && sudo dnf -y builddep kernel.spec
 	cd build/kernel && ./scripts/newpatch.sh ../../0001-information-flow.patch
 	cd build/kernel && ./scripts/newpatch.sh ../../0002-camflow.patch
-	./prep_config.sh
+	./scripts/prep_config.sh
 	cd build/kernel && make release
 	cd build/kernel && fedpkg prep
 	cd build/kernel && fedpkg local
