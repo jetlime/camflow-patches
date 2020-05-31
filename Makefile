@@ -96,6 +96,7 @@ fedora:
 	cd build/kernel && sudo dnf -y builddep kernel.spec
 	cd build/kernel && ./scripts/newpatch.sh ../../0001-information-flow.patch
 	cd build/kernel && ./scripts/newpatch.sh ../../0002-camflow.patch
+	cd build/kernel && sed -i -e "s/%define buildid .0002_camflow.patch/%define buildid .camflow/g" kernel.spec
 	./prep_config.sh
 	cd build/kernel && make release
 	cd build/kernel && fedpkg prep
