@@ -101,6 +101,8 @@ fedora:
 	cd build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0002-camflow.patch
 	cd build/kernel && ./scripts/newpatch.sh ../0002-camflow.patch
 	cd build/kernel && sed -i -e "s/%define buildid .0002_camflow.patch/%define buildid .camflow/g" kernel.spec
+	cd build/kernel && sed -i -e "s/%define with_headers 0/%define with_headers 1/g" kernel.spec
+	cd build/kernel && sed -i -e "s/%define with_cross_headers 0/%define with_cross_headers 1/g" kernel.spec
 	./scripts/prep_config.sh
 	cd build/kernel && make release
 	cd build/kernel && fedpkg prep
