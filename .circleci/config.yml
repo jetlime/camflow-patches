@@ -42,29 +42,6 @@ jobs:
       - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc pkg-config zsh libelf-dev bison flex'
       - run: 'make config_circle_fedora'
       - run: 'make compile_security'
-  fedora:
-    docker:
-      - image: kernelci/build-gcc-8_x86:latest
-    working_directory: ~/circulate
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ~/circulate
-      - run: 'apt-get update -qq --allow-releaseinfo-change'
-      - run: 'apt-get install -y sudo rpm cpio'
-      - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc pkg-config zsh libelf-dev bison flex'
-      - run: 'make config_circle_fedora'
-      - run:
-          command: 'make rpm'
-          no_output_timeout: '60m'
-      - run: 'make move_rpm'
-      - run: 'ls'
-      - run: 'cd ~/circulate/  && ls'
-      - run: 'cd ~/circulate/output && ls'
-      - persist_to_workspace:
-          root: ~/circulate
-          paths:
-            - ./output
   ubuntu_security:
     docker:
       - image: moul/kernel-builder:latest
@@ -113,6 +90,22 @@ jobs:
           root: ~/circulate
           paths:
             - ./output
+  fedora_x86:
+    docker:
+      - image: fedora:31
+    resource_class: large
+    working_directory: ~/circulate
+    steps:
+      - checkout
+      - run: 'sudo dnf install -y make wget'
+      - run: 'sudo dnf install -y fedpkg fedora-packager rpmdevtools ncurses-devel pesign grubby'
+      - run:
+          command: 'make fedora'
+          no_output_timeout: '60m'
+      - persist_to_workspace:
+          root: ~/circulate
+          paths:
+            - ./output
   publish:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
@@ -138,7 +131,7 @@ workflows:
       - fedora_security:
           requires:
             - checkout
-      - fedora:
+      - fedora_x86:
           requires:
             - fedora_security
       - ubuntu_security:
@@ -153,5 +146,5 @@ workflows:
               only:
                 - master
           requires:
-            - fedora
+            - fedora_x86
             - ubuntu
