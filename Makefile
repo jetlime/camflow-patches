@@ -79,11 +79,9 @@ move_deb:
 	cd output && ls
 
 publish:
-	cd ./output && ls
-	cd ./output && ../scripts/upload_rpm_packages.sh camflow/provenance/fedora/$(fedora-version)
-	cd ./output && package_cloud push camflow/provenance/ubuntu/$(ubuntu-version) linux-headers-$(kernel-version)camflow$(lsm-version)+_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
-	cd ./output && package_cloud push camflow/provenance/ubuntu/$(ubuntu-version) linux-image-$(kernel-version)camflow$(lsm-version)+_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
-	cd ./output && package_cloud push camflow/provenance/ubuntu/$(ubuntu-version) linux-libc-dev_$(kernel-version)camflow$(lsm-version)+-1_amd64.deb
+	cd output && ls
+	cd output && ../scripts/upload_rpm_packages.sh camflow/provenance/fedora/$(fedora-version)
+	cd output && ../scripts/upload_deb_packages.sh camflow/provenance/ubuntu/$(ubuntu-version)
 
 install:
 	cd ./build/linux-stable && sudo $(MAKE) modules_install
