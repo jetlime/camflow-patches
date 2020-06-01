@@ -97,7 +97,7 @@ jobs:
     working_directory: ~/circulate
     steps:
       - checkout
-      - run: 'sudo dnf install -y make wget'
+      - run: 'sudo dnf install -y make wget rsync'
       - run: 'sudo dnf install -y fedpkg fedora-packager rpmdevtools ncurses-devel pesign grubby'
       - run:
           command: 'make fedora'
