@@ -12,6 +12,7 @@ prepare:
 	cd build/linux-stable && git apply ../0001-information-flow.patch
 	cd build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0002-camflow.patch
 	cd build/linux-stable && git apply ../0002-camflow.patch
+	cd build/linux-stable && sed -i -e "s/EXTRAVERSION =/EXTRAVERSION = camflow$(lsm-version)/g" Makefile
 
 config_def:
 	echo "Default method to retrieve configuration"
