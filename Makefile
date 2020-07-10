@@ -89,15 +89,16 @@ install:
 	cd ~/build/linux-stable && sudo $(MAKE) install
 
 clean:
-	rm -rf ./build
+	rm -rf ~/build
 	rm -rf ./output
 
 fedora:
-	mkdir -p build
+	mkdir -p ~/build
 	cd ~/build && fedpkg clone -a kernel
 	cd ~/build/kernel && git checkout -b camflow origin/f$(fedora-version)
 	cd ~/build/kernel && sudo dnf -y builddep kernel.spec
 	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-information-flow.patch
+	cp ./scripts/newpatch.sh ~/build/kernel/scripts/newpatch.sh
 	cd ~/build/kernel && ./scripts/newpatch.sh ../0001-information-flow.patch
 	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0002-camflow.patch
 	cd ~/build/kernel && ./scripts/newpatch.sh ../0002-camflow.patch
