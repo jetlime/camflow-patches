@@ -3,7 +3,7 @@ jobs:
   checkout:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
-    working_directory: ~/circulate
+    working_directory: ~/build
     steps:
       - checkout
       - restore_cache:
@@ -12,7 +12,7 @@ jobs:
       - run:
           name: 'Prepare build environment...'
           command: |
-            if [ -d "build/linux-stable" ]; then
+            if [ -d "~/build/linux-stable" ]; then
               echo 'Build environment was cached.'
             else
               echo 'Build environment was not cached.'
@@ -26,17 +26,17 @@ jobs:
           paths:
             - build
       - persist_to_workspace:
-          root: ~/circulate
+          root: ~/build
           paths:
-            - .
+            - linux-stable
   fedora_security:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
-    working_directory: ~/circulate
+    working_directory: ~/build
     steps:
       - checkout
       - attach_workspace:
-          at: ~/circulate
+          at: ~/build
       - run: 'apt-get update -qq --allow-releaseinfo-change'
       - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc pkg-config zsh libelf-dev bison flex'
@@ -45,11 +45,11 @@ jobs:
   ubuntu_security:
     docker:
       - image: moul/kernel-builder:latest
-    working_directory: ~/circulate
+    working_directory: ~/build
     steps:
       - checkout
       - attach_workspace:
-          at: ~/circulate
+          at: ~/build
       - run: 'apt-get update -qq'
       - run: 'apt-get install -y software-properties-common python-software-properties'
       - run: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
@@ -64,11 +64,11 @@ jobs:
   ubuntu:
     docker:
       - image: moul/kernel-builder:latest
-    working_directory: ~/circulate
+    working_directory: ~/build
     steps:
       - checkout
       - attach_workspace:
-          at: ~/circulate
+          at: ~/build
       - run: 'apt-get update -qq'
       - run: 'apt-get install -y software-properties-common python-software-properties'
       - run: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
@@ -84,17 +84,17 @@ jobs:
           no_output_timeout: '90m'
       - run: 'make move_deb'
       - run: 'ls'
-      - run: 'cd ~/circulate && ls'
-      - run: 'cd ~/circulate/output && ls'
+      - run: 'cd ~/build && ls'
+      - run: 'cd ~/build/output && ls'
       - persist_to_workspace:
-          root: ~/circulate
+          root: ~/build
           paths:
-            - ./output
+            - output
   fedora_x86:
     docker:
-      - image: fedora:31
+      - image: fedora:32
     resource_class: large
-    working_directory: ~/circulate
+    working_directory: ~/build
     steps:
       - checkout
       - run: 'sudo dnf install -y make wget rsync'
@@ -103,17 +103,17 @@ jobs:
           command: 'make fedora'
           no_output_timeout: '60m'
       - persist_to_workspace:
-          root: ~/circulate
+          root: ~/build
           paths:
-            - ./output
+            - output
   publish:
     docker:
       - image: kernelci/build-gcc-8_x86:latest
-    working_directory: ~/circulate
+    working_directory: ~/build
     steps:
       - checkout
       - attach_workspace:
-          at: ~/circulate
+          at: ~/build
       - run: 'apt-get install --reinstall make'
       - run: 'apt-get install -y ruby ruby-dev'
       - run: 'apt-get install -y rename'
