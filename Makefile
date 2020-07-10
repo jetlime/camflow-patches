@@ -97,12 +97,10 @@ fedora:
 	cd ~/build && fedpkg clone -a kernel
 	cd ~/build/kernel && git checkout -b camflow origin/f$(fedora-version)
 	cd ~/build/kernel && sudo dnf -y builddep kernel.spec
-	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-information-flow.patch
-	cp ./scripts/newpatch.sh ~/build/kernel/scripts/newpatch.sh
-	cd ~/build/kernel && ./scripts/newpatch.sh ../0001-information-flow.patch
-	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0002-camflow.patch
-	cd ~/build/kernel && ./scripts/newpatch.sh ../0002-camflow.patch
-	cd ~/build/kernel && sed -i -e "s/%define buildid .0002_camflow.patch/%define buildid .camflow/g" kernel.spec
+	cd ~/build/kernel && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-information-flow.patch
+	cd ~/build/kernel && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0002-camflow.patch
+	./scripts/add_patch.sh
+	cd ~/build/kernel && sed -i -e "s/# define buildid .local/%define buildid .camflow/g" kernel.spec
 	cd ~/build/kernel && sed -i -e "s/%define with_headers 0/%define with_headers 1/g" kernel.spec
 	cd ~/build/kernel && sed -i -e "s/%define with_cross_headers 0/%define with_cross_headers 1/g" kernel.spec
 	./scripts/prep_config.sh
