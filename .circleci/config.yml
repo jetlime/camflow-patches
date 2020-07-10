@@ -114,6 +114,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/build
+      - run: 'apt-get update -qq'
       - run: 'apt-get install --reinstall make'
       - run: 'apt-get install -y ruby ruby-dev'
       - run: 'apt-get install -y rename'
