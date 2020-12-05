@@ -92,7 +92,7 @@ jobs:
             - output
   fedora_x86:
     docker:
-      - image: fedora:32
+      - image: fedora:33
     resource_class: large
     working_directory: ~/build
     steps:

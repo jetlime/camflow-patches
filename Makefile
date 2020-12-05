@@ -1,6 +1,6 @@
-kernel-version=5.7.7
-lsm-version=0.7.0
-fedora-version=32
+kernel-version=5.9.11
+lsm-version=0.7.1
+fedora-version=33
 ubuntu-version='bionic'
 arch=x86_64
 
@@ -81,8 +81,8 @@ move_deb:
 
 publish:
 	cd output && ls
-	cd output && ../scripts/upload_rpm_packages.sh camflow/provenance/fedora/$(fedora-version)
-	cd output && ../scripts/upload_deb_packages.sh camflow/provenance/ubuntu/$(ubuntu-version)
+	cd output && bash ../scripts/upload_rpm_packages.sh camflow/provenance/fedora/$(fedora-version)
+	cd output && bash ../scripts/upload_deb_packages.sh camflow/provenance/ubuntu/$(ubuntu-version)
 
 install:
 	cd ~/build/linux-stable && sudo $(MAKE) modules_install
@@ -99,11 +99,11 @@ fedora:
 	cd ~/build/kernel && sudo dnf -y builddep kernel.spec
 	cd ~/build/kernel && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-information-flow.patch
 	cd ~/build/kernel && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0002-camflow.patch
-	./scripts/add_patch.sh
+	bash ./scripts/add_patch.sh
 	cd ~/build/kernel && sed -i -e "s/# define buildid .local/%define buildid .camflow/g" kernel.spec
 	cd ~/build/kernel && sed -i -e "s/%define with_headers 0/%define with_headers 1/g" kernel.spec
 	cd ~/build/kernel && sed -i -e "s/%define with_cross_headers 0/%define with_cross_headers 1/g" kernel.spec
-	./scripts/prep_config.sh
+	bash ./scripts/prep_config.sh
 	cd ~/build/kernel && make release
 	cd ~/build/kernel && fedpkg prep
 	cd ~/build/kernel && fedpkg local

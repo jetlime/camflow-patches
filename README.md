@@ -2,7 +2,7 @@
 
 | Branch | Build Status|
 |--------|-------------|
-| master | [![Master Build Status](https://api.travis-ci.org/CamFlow/camflow-patches.svg?branch=master)](https://travis-ci.org/CamFlow/camflow-patches/branches)  |
+| master | [![Master Build Status](https://circleci.com/gh/CamFlow/camflow-patches.png?circle-token=:circle-token)](https://app.circleci.com/pipelines/github/CamFlow/camflow-patches)  |
 
 Automated Travis test verifies:
 - patch can be applied to the kernel;
