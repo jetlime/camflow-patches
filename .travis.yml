@@ -25,7 +25,7 @@ script:
   - sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++
   - gcc --version
   - g++ --version
-  - make prepare && make config_travis && make compile && make install
+  - make prepare && make config_travis && make compile
 
 notifications:
   slack: camflow:T3Umf9cAIwKnaxFEkjeZV7RM
