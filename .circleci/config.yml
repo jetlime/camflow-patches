@@ -114,6 +114,7 @@ jobs:
     working_directory: ~/build
     steps:
       - checkout
+      - run: 'apt-get install -y python python-pip' 
       - attach_workspace:
           at: ~/build
       - cloudsmith/ensure-api-key
@@ -122,6 +123,10 @@ jobs:
           cloudsmith-repository: camflow/camflow
           package-path: output/kernel-*.rpm
           package-format: rpm
+      - cloudsmith/publish:
+          cloudsmith-repository: camflow/camflow
+          package-path: output/linux-*.deb
+          package-format: deb
 
 workflows:
   version: 2
