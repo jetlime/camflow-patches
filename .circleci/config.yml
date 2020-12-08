@@ -122,6 +122,7 @@ jobs:
           cloudsmith-repository: camflow/camflow
           package-path: output/kernel-*.rpm
           package-type: rpm
+          package-format: rpm
 
 workflows:
   version: 2
