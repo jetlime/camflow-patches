@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  cloudsmith: cloudsmith/cloudsmith@1.0.1
 jobs:
   checkout:
     docker:
@@ -114,16 +116,13 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/build
-      - run: 'apt-get update -qq'
-      - run: 'apt-get install --reinstall make'
-      - run: 'apt-get install -y ruby ruby-dev'
-      - run: 'apt-get install -y rename'
-      - run: 'gem install rake'
-      - run: 'gem install package_cloud'
-      - deploy:
-          name: publish
-          command:
-              make publish
+      - cloudsmith/ensure-api-key
+      - cloudsmith/install-cli
+      - cloudsmith/publish:
+          cloudsmith-repository: camflow/camflow
+          package-path: output/kernel-*.rpm
+          package-type: rpm
+
 workflows:
   version: 2
   build-and-deploy:
@@ -142,10 +141,6 @@ workflows:
           requires:
             - ubuntu_security
       - publish:
-          filters:
-            branches:
-              only:
-                - master
           requires:
             - fedora_x86
             - ubuntu
