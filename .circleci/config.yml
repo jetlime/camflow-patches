@@ -109,8 +109,7 @@ jobs:
           paths:
             - output
   publish:
-    docker:
-      - image: kernelci/build-gcc-8_x86:latest
+    executor: cloudsmith/default
     working_directory: ~/build
     steps:
       - checkout
@@ -120,11 +119,13 @@ jobs:
       - cloudsmith/ensure-api-key
       - cloudsmith/install-cli
       - cloudsmith/publish:
+          allow-republish: true
           cloudsmith-repository: camflow/camflow
           package-path: output/kernel-*.rpm
           package-format: rpm
           package-distribution: fedora/33
       - cloudsmith/publish:
+          allow-republish: true
           cloudsmith-repository: camflow/camflow
           package-path: output/linux-*.deb
           package-format: deb
