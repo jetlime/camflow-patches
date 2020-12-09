@@ -79,11 +79,6 @@ move_deb:
 	mv -f ~/build/*.deb ./output
 	cd output && ls
 
-publish:
-	cd output && ls
-	cd output && bash ../scripts/upload_rpm_packages.sh camflow/provenance/fedora/$(fedora-version)
-	cd output && bash ../scripts/upload_deb_packages.sh camflow/provenance/ubuntu/$(ubuntu-version)
-
 install:
 	cd ~/build/linux-stable && sudo $(MAKE) modules_install
 	cd ~/build/linux-stable && sudo $(MAKE) install
