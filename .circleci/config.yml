@@ -117,6 +117,7 @@ jobs:
           at: ~/build
       - cloudsmith/ensure-api-key
       - cloudsmith/install-cli
+      - run: 'cd ./output && ls'
       - cloudsmith/publish:
           allow-republish: true
           cloudsmith-repository: camflow/camflow
