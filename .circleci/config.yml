@@ -244,6 +244,10 @@ workflows:
           requires:
             - ubuntu_security
       - publish:
+          filters:
+              branches:
+                  only:
+                      - master
           requires:
             - fedora_x86
             - ubuntu
