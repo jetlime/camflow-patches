@@ -95,7 +95,7 @@ jobs:
   fedora_x86:
     docker:
       - image: fedora:33
-    resource_class: large
+    resource_class: xlarge
     working_directory: ~/build
     steps:
       - checkout
@@ -226,25 +226,6 @@ jobs:
           package-path: output/kernel-modules-internal-5*.x86_64.rpm
           package-format: rpm
           package-distribution: fedora/33
-      - cloudsmith/publish:
-          allow-republish: true
-          cloudsmith-repository: camflow/camflow
-          package-path: output/linux-headers*.deb
-          package-format: deb
-          package-distribution: ubuntu/bionic
-      - cloudsmith/publish:
-          allow-republish: true
-          cloudsmith-repository: camflow/camflow
-          package-path: output/linux-image*.deb
-          package-format: deb
-          package-distribution: ubuntu/bionic
-      - cloudsmith/publish:
-          allow-republish: true
-          cloudsmith-repository: camflow/camflow
-          package-path: output/linux-libc-dev*.deb
-          package-format: deb
-          package-distribution: ubuntu/bionic
-
 workflows:
   version: 2
   build-and-deploy:
@@ -263,6 +244,10 @@ workflows:
           requires:
             - ubuntu_security
       - publish:
+          filters:
+              branches:
+                  only:
+                      - master
           requires:
             - fedora_x86
             - ubuntu
