@@ -95,7 +95,7 @@ jobs:
   fedora_x86:
     docker:
       - image: fedora:33
-    resource_class: large
+    resource_class: xlarge
     working_directory: ~/build
     steps:
       - checkout
