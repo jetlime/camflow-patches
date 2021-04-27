@@ -99,6 +99,7 @@ fedora:
 	cd ~/build/kernel && sed -i -e "s/%define with_headers 0/%define with_headers 1/g" kernel.spec
 	cd ~/build/kernel && sed -i -e "s/%define with_cross_headers 0/%define with_cross_headers 1/g" kernel.spec
 	bash ./scripts/prep_config.sh
+	bash ./scripts/release.sh
 	cd ~/build/kernel && fedpkg prep
 	cd ~/build/kernel && fedpkg local
 	mkdir -p output
