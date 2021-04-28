@@ -1,12 +1,12 @@
-kernel-version=5.9.11
-lsm-version=0.7.1
+kernel-version=5.11.2
+lsm-version=0.7.2
 fedora-version=33
 ubuntu-version='bionic'
 arch=x86_64
 
 prepare:
 	mkdir -p ~/build
-	cd ~/build && git clone -b v$(kernel-version) --single-branch git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
+	cd ~/build && git clone -b v$(kernel-version) --single-branch --depth 1 git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 	cd ~/build/linux-stable && $(MAKE) mrproper
 	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-information-flow.patch
 	cd ~/build/linux-stable && git apply ../0001-information-flow.patch
@@ -99,7 +99,7 @@ fedora:
 	cd ~/build/kernel && sed -i -e "s/%define with_headers 0/%define with_headers 1/g" kernel.spec
 	cd ~/build/kernel && sed -i -e "s/%define with_cross_headers 0/%define with_cross_headers 1/g" kernel.spec
 	bash ./scripts/prep_config.sh
-	cd ~/build/kernel && make release
+	bash ./scripts/release.sh
 	cd ~/build/kernel && fedpkg prep
 	cd ~/build/kernel && fedpkg local
 	mkdir -p output
