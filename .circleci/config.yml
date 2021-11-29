@@ -44,54 +44,6 @@ jobs:
       - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev libncursesw5-dev bc pkg-config zsh libelf-dev bison flex'
       - run: 'make config_circle_fedora'
       - run: 'make compile_security'
-  ubuntu_security:
-    docker:
-      - image: moul/kernel-builder:latest
-    working_directory: ~/build
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ~/build
-      - run: 'apt-get update -qq'
-      - run: 'apt-get install -y software-properties-common python-software-properties'
-      - run: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
-      - run: 'apt-get update -qq'
-      - run: 'apt-get install -y build-essential'
-      - run: 'apt-get install -y rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev module-init-tools'
-      - run: 'apt-get install -y gcc-8 g++-8'
-      - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8'
-      - run: 'apt-get install -y bison flex cpio'
-      - run: 'make config_circle_ubuntu'
-      - run: 'make compile_security'
-  ubuntu:
-    docker:
-      - image: moul/kernel-builder:latest
-    working_directory: ~/build
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ~/build
-      - run: 'apt-get update -qq'
-      - run: 'apt-get install -y software-properties-common python-software-properties'
-      - run: 'add-apt-repository ppa:ubuntu-toolchain-r/test'
-      - run: 'apt-get update -qq'
-      - run: 'apt-get install -y build-essential'
-      - run: 'apt-get install -y rpm libncurses-dev cmake clang wget git libssl-dev bc patch libedit-dev libelf-dev module-init-tools'
-      - run: 'apt-get install -y gcc-8 g++-8'
-      - run: 'update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8'
-      - run: 'apt-get install -y bison flex cpio'
-      - run: 'make config_circle_ubuntu'
-      - run:
-          command: 'make deb'
-          no_output_timeout: '90m'
-      - run: 'make move_deb'
-      - run: 'ls'
-      - run: 'cd ~/build && ls'
-      - run: 'cd ~/build/output && ls'
-      - persist_to_workspace:
-          root: ~/build
-          paths:
-            - output
   fedora_x86:
     docker:
       - image: fedora:33
@@ -237,12 +189,6 @@ workflows:
       - fedora_x86:
           requires:
             - fedora_security
-      - ubuntu_security:
-          requires:
-            - checkout
-      - ubuntu:
-          requires:
-            - ubuntu_security
       - publish:
           filters:
               branches:
@@ -250,4 +196,3 @@ workflows:
                       - master
           requires:
             - fedora_x86
-            - ubuntu

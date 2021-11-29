@@ -1,7 +1,6 @@
-kernel-version=5.11.2
-lsm-version=0.7.2
-fedora-version=33
-ubuntu-version='bionic'
+kernel-version=5.15.4
+lsm-version=0.8.0
+fedora-version=35
 arch=x86_64
 
 prepare:
@@ -43,22 +42,8 @@ config_small:
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO=n/CONFIG_DEBUG_INFO=y/g" .config
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO_BTF=n/CONFIG_DEBUG_INFO_BTF=y/g" .config
 
-config_travis:
-	cp .config_fedora ~/build/linux-stable/.config
-	cd ~/build/linux-stable && ./scripts/kconfig/streamline_config.pl > config_strip
-	cd ~/build/linux-stable &&  mv .config config_sav
-	cd ~/build/linux-stable &&  mv config_strip .config
-	cd ~/build/linux-stable && $(MAKE) olddefconfig
-	cd ~/build/linux-stable && $(MAKE) oldconfig
-	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
-
 config_circle_fedora:
 	cp .config_fedora ~/build/linux-stable/.config
-	cd ~/build/linux-stable && $(MAKE) olddefconfig
-	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
-
-config_circle_ubuntu:
-	cp .config_ubuntu ~/build/linux-stable/.config
 	cd ~/build/linux-stable && $(MAKE) olddefconfig
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
 
@@ -68,16 +53,6 @@ compile_security:
 compile:
 	cd ~/build/linux-stable && $(MAKE) -j16
 	cd ~/build/linux-stable && sudo $(MAKE) headers_install ARCH=${arch} INSTALL_HDR_PATH=/usr
-
-deb:
-	echo "Starting to build deb packages..."
-	cd ~/build/linux-stable && $(MAKE) -j 16 deb-pkg
-
-move_deb:
-	echo "Preparing packages..."
-	mkdir -p output
-	mv -f ~/build/*.deb ./output
-	cd output && ls
 
 install:
 	cd ~/build/linux-stable && sudo $(MAKE) modules_install
