@@ -1,6 +1,6 @@
-kernel-version=5.11.2
-lsm-version=0.7.2
-fedora-version=33
+kernel-version=5.15.4
+lsm-version=0.8.0
+fedora-version=35
 ubuntu-version='bionic'
 arch=x86_64
 
