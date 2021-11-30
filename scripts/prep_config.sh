@@ -6,3 +6,10 @@ do
   cat ./extra-conf >> $i
 	sed -i -e "s/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock\"/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock,provenance\"/g" $i
 done
+
+for i in ~/build/kernel/*-rhel.config
+do
+	echo $i
+  cat ./extra-conf >> $i
+	sed -i -e "s/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock\"/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock,provenance\"/g" $i
+done
