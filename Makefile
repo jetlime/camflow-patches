@@ -28,7 +28,7 @@ config:
 	cd ~/build/linux-stable && $(MAKE) olddefconfig
 	cd ~/build/linux-stable && $(MAKE) menuconfig
 	cd ~/build/linux-stable && sudo cp -f .config /boot/config-$(kernel-version)camflow-$(lsm-version)
-	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
+	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock\"/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock,provenance\"/g" .config
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO=n/CONFIG_DEBUG_INFO=y/g" .config
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO_BTF=n/CONFIG_DEBUG_INFO_BTF=y/g" .config
 
@@ -38,14 +38,24 @@ config_small:
 	cd ~/build/linux-stable &&  mv .config config_sav
 	cd ~/build/linux-stable &&  mv config_strip .config
 	cd ~/build/linux-stable && $(MAKE) menuconfig
-	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
+	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock\"/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock,provenance\"/g" .config
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO=n/CONFIG_DEBUG_INFO=y/g" .config
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO_BTF=n/CONFIG_DEBUG_INFO_BTF=y/g" .config
 
 config_circle_fedora:
 	cp .config_fedora ~/build/linux-stable/.config
 	cd ~/build/linux-stable && $(MAKE) olddefconfig
-	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor\"/CONFIG_LSM=\"yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,provenance\"/g" .config
+	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock\"/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock,provenance\"/g" .config
+
+config_circle:
+	cp .config_fedora ~/build/linux-stable/.config
+	cd ~/build/linux-stable && ./scripts/kconfig/streamline_config.pl > config_strip
+	cd ~/build/linux-stable &&  mv .config config_sav
+	cd ~/build/linux-stable &&  mv config_strip .config
+	cd ~/build/linux-stable && $(MAKE) olddefconfig
+	cd ~/build/linux-stable && $(MAKE) oldconfig
+	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock\"/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock,provenance\"/g" .config
+
 
 compile_security:
 	cd ~/build/linux-stable && $(MAKE) security W=1
