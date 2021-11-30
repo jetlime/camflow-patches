@@ -1,4 +1,4 @@
-kernel-version=5.15.4
+kernel-version=5.15.5
 lsm-version=0.8.0
 fedora-version=35
 arch=x86_64
