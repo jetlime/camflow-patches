@@ -46,7 +46,7 @@ jobs:
       - run: 'make compile_security'
   fedora_x86:
     docker:
-      - image: fedora:35
+      - image: fedora:36
     resource_class: xlarge
     working_directory: ~/build
     steps:
