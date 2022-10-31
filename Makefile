@@ -1,16 +1,14 @@
-kernel-version=5.15.5
-lsm-version=0.8.0
-fedora-version=35
+kernel-version=6.0.5
+lsm-version=0.9.0
+fedora-version=36
 arch=x86_64
 
 prepare:
 	mkdir -p ~/build
 	cd ~/build && git clone -b v$(kernel-version) --single-branch --depth 1 git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 	cd ~/build/linux-stable && $(MAKE) mrproper
-	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-information-flow.patch
-	cd ~/build/linux-stable && git apply ../0001-information-flow.patch
-	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0002-camflow.patch
-	cd ~/build/linux-stable && git apply ../0002-camflow.patch
+	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-camflow.patch
+	cd ~/build/linux-stable && git apply ../0001-camflow.patch
 	cd ~/build/linux-stable && sed -i -e "s/EXTRAVERSION =/EXTRAVERSION = camflow$(lsm-version)/g" Makefile
 
 config_def:
@@ -77,8 +75,7 @@ fedora:
 	cd ~/build && fedpkg clone -a kernel
 	cd ~/build/kernel && git checkout -b camflow origin/f$(fedora-version)
 	cd ~/build/kernel && sudo dnf -y builddep kernel.spec
-	cd ~/build/kernel && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-information-flow.patch
-	cd ~/build/kernel && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0002-camflow.patch
+	cd ~/build/kernel && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-camflow.patch
 	bash ./scripts/add_patch.sh
 	cd ~/build/kernel && sed -i -e "s/# define buildid .local/%define buildid .camflow/g" kernel.spec
 	cd ~/build/kernel && sed -i -e "s/%define with_headers 0/%define with_headers 1/g" kernel.spec
