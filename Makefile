@@ -30,6 +30,7 @@ config:
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO=n/CONFIG_DEBUG_INFO=y/g" .config
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO_BTF=n/CONFIG_DEBUG_INFO_BTF=y/g" .config
 	cd ~/build/linux-stable && ./scripts/config --disable SYSTEM_TRUSTED_KEYS
+	cd ~/build/linux-stable && ./scripts/config --disable SYSTEM_REVOCATION_KEYS
 
 config_small:
 	test -f /boot/config-$(shell uname -r) && $(MAKE) config_def || $(MAKE) config_pi
