@@ -6,7 +6,6 @@ arch=x86_64
 prepare:
 	mkdir -p ~/build
 	cd ~/build && git clone -b v$(kernel-version) --single-branch --depth 1 git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
-	~/build/linux-stable/scripts/config --set-str SYSTEM_TRUSTED_KEYS ""
 	cd ~/build/linux-stable && $(MAKE) mrproper
 	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-camflow.patch
 	cd ~/build/linux-stable && git apply ../0001-camflow.patch
@@ -30,6 +29,7 @@ config:
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock\"/CONFIG_LSM=\"lockdown,yama,integrity,selinux,bpf,landlock,provenance\"/g" .config
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO=n/CONFIG_DEBUG_INFO=y/g" .config
 	cd ~/build/linux-stable && sed -i -e "s/CONFIG_DEBUG_INFO_BTF=n/CONFIG_DEBUG_INFO_BTF=y/g" .config
+	~/build/linux-stable/scripts/config --set-str SYSTEM_TRUSTED_KEYS ""
 
 config_small:
 	test -f /boot/config-$(shell uname -r) && $(MAKE) config_def || $(MAKE) config_pi
