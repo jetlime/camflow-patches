@@ -6,7 +6,7 @@ arch=x86_64
 prepare:
 	mkdir -p ~/build
 	cd ~/build && git clone -b v$(kernel-version) --single-branch --depth 1 git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
- 	~/build/linux-stable/scripts/config --set-str SYSTEM_TRUSTED_KEYS ""
+	~/build/linux-stable/scripts/config --set-str SYSTEM_TRUSTED_KEYS ""
 	cd ~/build/linux-stable && $(MAKE) mrproper
 	cd ~/build && wget https://github.com/camflow/camflow-dev/releases/download/v$(lsm-version)/0001-camflow.patch
 	cd ~/build/linux-stable && git apply ../0001-camflow.patch
